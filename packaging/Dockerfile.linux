@@ -3,7 +3,7 @@
 FROM python:3.11-bullseye
 ENV DEBIAN_FRONTEND=noninteractive
 # Debian 11 is served from the archive now
-RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/*; do [ -f "$f" ] &&         sed -i -e 's|deb.debian.org|archive.debian.org|g' -e 's|security.debian.org|archive.debian.org|g'                -e '/bullseye-updates/d' "$f"; done;     echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
+RUN rm -f /etc/apt/sources.list.d/* &&     echo "deb http://archive.debian.org/debian bullseye main" > /etc/apt/sources.list &&     echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
 RUN apt-get update && apt-get install -y --no-install-recommends binutils \
            libgl1 libegl1 libglib2.0-0 libfontconfig1 libdbus-1-3 libxkbcommon0 libxkbcommon-x11-0 \
            libxcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
