@@ -374,10 +374,21 @@ class StatCard(HoverCard):
         lay.addStretch()
         self._anim = QVariantAnimation(self, duration=900, easingCurve=QEasingCurve.OutExpo)
         self._suffix = ""
-        self._anim.valueChanged.connect(lambda v: v is not None and self.value.setText(f"{int(v)}{self._suffix}"))
+        self._target = 0
+        self._anim.valueChanged.connect(self._show)
+        self._anim.finished.connect(lambda: self._show(self._target))
+
+    def _show(self, v):
+        if v is None:
+            return
+        self.value.setText(f"{int(v)}{self._suffix}")
+        # The card's graphics effect caches its rendering: repaint the whole card, not just the label
+        self.update()
 
     def set_value(self, n: int, suffix: str = ""):
         self._suffix = suffix
+        self._target = int(n)
+        self._show(0)
         self._anim.stop()
         self._anim.setStartValue(0)
         self._anim.setEndValue(int(n))
