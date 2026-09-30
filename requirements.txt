@@ -1,0 +1,7 @@
+PySide6>=6.6
+numpy>=1.24
+opencv-python-headless>=4.8
+mss>=9.0
+pynput>=1.7.6
+onnxruntime>=1.16
+rapidocr-onnxruntime>=1.3.24

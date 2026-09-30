@@ -1,0 +1,9 @@
+.venv/
+.venv-linux/
+__pycache__/
+*.pyc
+build/
+dist/
+/UIV Studio.exe
+/UIV Studio
+.uivstudio/
