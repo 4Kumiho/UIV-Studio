@@ -220,30 +220,19 @@ class Sidebar(QFrame):
 
 
 class Logo(QWidget):
-    """Brand mark: gradient rounded square with a play/target glyph."""
+    """Brand mark (the application icon)."""
 
     def __init__(self, size=30, parent=None):
         super().__init__(parent)
         self.setFixedSize(size, size)
+        from PySide6.QtGui import QPixmap
+        from uiv_studio.core.paths import resource_dir
+        self.pm = QPixmap(str(resource_dir() / "icon.png"))
 
     def paintEvent(self, e):
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
-        r = QRectF(self.rect())
-        g = QLinearGradient(r.topLeft(), r.bottomRight())
-        g.setColorAt(0, QColor(C["accent"]))
-        g.setColorAt(1, QColor(C["cyan"]))
-        p.setPen(Qt.NoPen)
-        p.setBrush(g)
-        p.drawRoundedRect(r, r.width() * 0.28, r.width() * 0.28)
-        s = r.width()
-        path = QPainterPath()
-        path.moveTo(s * 0.38, s * 0.28)
-        path.lineTo(s * 0.74, s * 0.5)
-        path.lineTo(s * 0.38, s * 0.72)
-        path.closeSubpath()
-        p.setBrush(QColor("white"))
-        p.drawPath(path)
+        p.setRenderHint(QPainter.SmoothPixmapTransform)
+        p.drawPixmap(self.rect(), self.pm)
 
 
 # ====================================================================== cards

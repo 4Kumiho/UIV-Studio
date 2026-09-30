@@ -32,7 +32,7 @@ excludes = [
 ]
 
 a = Analysis(
-    [os.path.join(ROOT, "uiv_studio_launcher.py")],
+    [os.path.join(ROOT, "uiv_studio", "__main__.py")],
     pathex=[ROOT],
     datas=datas,
     hiddenimports=hidden,
