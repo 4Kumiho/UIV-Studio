@@ -125,7 +125,12 @@ def play(ws: Path, rec_path: Path, monitor):
 def main():
     app = QCoreApplication(sys.argv)
     t0 = time.time()
+    from uiv_studio.platform import gnome
+    gnome.available(wait=30)          # slow CI machines: give mutter time to register its services
+    backend.kind.cache_clear()
     print("backend:", backend.kind())
+    if backend.kind() != "gnome-wayland":
+        print(open("/tmp/mutter.log").read()[-3000:])
     assert backend.kind() == "gnome-wayland"
     monitor = backend.list_monitors()[0]
     ws = Path(tempfile.mkdtemp(prefix="uiv_wl_"))
