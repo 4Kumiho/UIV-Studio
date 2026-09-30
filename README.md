@@ -308,7 +308,7 @@ XWayland e PipeWire, un'app di prova, registrazione tramite mouse/tastiera virtu
 
 ```bash
 docker build -t uiv-wayland -f tests/wayland/Dockerfile .
-docker run --rm --privileged -v "$PWD":/src uiv-wayland bash tests/wayland/session.sh python tests/wayland/e2e_wayland.py
+docker run --rm --device /dev/uinput --device-cgroup-rule='c 13:* rmw' --cap-add=MKNOD -v "$PWD":/src uiv-wayland bash tests/wayland/session.sh python tests/wayland/e2e_wayland.py
 ```
 
 **Rilascio di una nuova versione:** aggiorna `__version__` in `uiv_studio/__init__.py`, poi

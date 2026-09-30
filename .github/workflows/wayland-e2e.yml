@@ -19,7 +19,7 @@ jobs:
       - run: sudo modprobe uinput
       - run: docker build -t uiv-wayland -f tests/wayland/Dockerfile .
       - name: Record + replay on GNOME Wayland
-        run: docker run --rm --privileged -e UIV_MUTTER_DEBUG=all -v "$PWD":/src uiv-wayland bash tests/wayland/session.sh python tests/wayland/e2e_wayland.py
+        run: docker run --rm --device /dev/uinput --device-cgroup-rule='c 13:* rmw' --cap-add=MKNOD -v "$PWD":/src uiv-wayland bash tests/wayland/session.sh python tests/wayland/e2e_wayland.py
       - name: UI starts on Wayland
         run: |
           mkdir -p build
