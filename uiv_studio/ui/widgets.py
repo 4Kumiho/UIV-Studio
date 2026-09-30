@@ -242,7 +242,11 @@ class Logo(QWidget):
 
 
 class HoverCard(QFrame):
-    """Rounded card with animated hover highlight and shadow; optional click."""
+    """Rounded card with animated hover highlight and glow; optional click.
+
+    The glow is painted directly (no QGraphicsEffect): graphics effects cache the
+    card's rendering, which left child labels (e.g. counters) stale until hovered.
+    """
 
     clicked = Signal()
 
@@ -254,24 +258,11 @@ class HoverCard(QFrame):
         self.setAttribute(Qt.WA_StyledBackground, False)
         if clickable:
             self.setCursor(Qt.PointingHandCursor)
-        self._shadow = QGraphicsDropShadowEffect(self, blurRadius=0, offset=QPointF(0, 6), color=QColor(0, 0, 0, 0))
-        self.setGraphicsEffect(self._shadow)
         self._anim = QVariantAnimation(self, duration=200, easingCurve=EASE)
         self._anim.valueChanged.connect(self._set)
 
     def _set(self, v):
         self._h = float(v)
-        eff = self.graphicsEffect()
-        if not isinstance(eff, QGraphicsDropShadowEffect):
-            # a transient effect (e.g. fade_in) replaced and deleted our shadow: recreate it
-            if eff is not None:
-                self.update()
-                return
-            self._shadow = QGraphicsDropShadowEffect(self, blurRadius=0, offset=QPointF(0, 6), color=QColor(0, 0, 0, 0))
-            self.setGraphicsEffect(self._shadow)
-        self._shadow.setBlurRadius(28 * self._h)
-        c = QColor(self.accent); c.setAlpha(int(70 * self._h))
-        self._shadow.setColor(c)
         self.update()
 
     def _go(self, end):
@@ -297,6 +288,14 @@ class HoverCard(QFrame):
         p.setPen(QPen(border, 1))
         p.setBrush(bg)
         p.drawRoundedRect(r, 14, 14)
+        if self._h > 0.01:
+            # soft inner glow along the border
+            p.setBrush(Qt.NoBrush)
+            for i in range(1, 7):
+                c = QColor(self.accent)
+                c.setAlphaF(max(0.0, 0.16 * self._h * (1 - i / 7)))
+                p.setPen(QPen(c, 2))
+                p.drawRoundedRect(r.adjusted(i * 1.5, i * 1.5, -i * 1.5, -i * 1.5), max(4, 14 - i * 1.5), max(4, 14 - i * 1.5))
 
 
 class ActionTile(HoverCard):
@@ -386,12 +385,17 @@ class StatCard(HoverCard):
         self.update()
 
     def set_value(self, n: int, suffix: str = ""):
+        """Count up to `n` only when the value actually changes (no flicker on page revisit)."""
+        n = int(n)
+        if n == self._target and suffix == self._suffix and self.value.text() == f"{n}{suffix}":
+            return
+        shown = self.value.text().rstrip("%")
+        start = int(shown) if shown.isdigit() else 0
         self._suffix = suffix
-        self._target = int(n)
-        self._show(0)
+        self._target = n
         self._anim.stop()
-        self._anim.setStartValue(0)
-        self._anim.setEndValue(int(n))
+        self._anim.setStartValue(start)
+        self._anim.setEndValue(n)
         self._anim.start()
 
 
