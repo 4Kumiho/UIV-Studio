@@ -1,0 +1,33 @@
+# Push a tag like "v1.0.1" -> builds the Windows and Linux executables and attaches them to the Release.
+# The installers in the repository root always download the latest Release assets.
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1
+      - run: Copy-Item "UIV Studio.exe" UIV-Studio-windows.exe
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: UIV-Studio-windows.exe
+          tag_name: ${{ github.ref_name }}
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t uiv-build -f packaging/Dockerfile.linux .
+      - run: docker run --rm -v "$PWD":/src uiv-build
+      - run: sudo cp "UIV Studio" UIV-Studio-linux
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: UIV-Studio-linux
+          tag_name: ${{ github.ref_name }}

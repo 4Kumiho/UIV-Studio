@@ -36,14 +36,20 @@ consegna un report con punteggi, confronto atteso/trovato e video dell'esecuzion
 
 ## 🚀 Avvio in 10 secondi
 
-1. Scarica **`UIV Studio.exe`** dalla pagina [Releases](../../releases) (Linux: `UIV Studio`, poi `chmod +x`).
-2. Mettilo in una cartella qualsiasi e fai **doppio click**.
-3. Solo al primo avvio compare *“Installazione in corso (solo al primo avvio)”* per circa 20 secondi,
-   poi l'app si apre. Dal secondo avvio parte subito.
+1. Scarica la repo (**Code → Download ZIP**) oppure clonala:
+   ```bash
+   git clone https://github.com/4Kumiho/uiv-studio.git
+   ```
+2. Nella cartella avvia l'installer:
+   - **Windows:** doppio click su **`Installa UIV Studio.exe`**
+   - **Linux:** `sh installa-uiv-studio.sh`
+3. L'installer scarica l'ultima versione con una barra di avanzamento e crea **`UIV Studio.exe`**
+   (Linux: `UIV Studio`) nella stessa cartella, poi la apre.
+4. Da quel momento apri l'app con **`UIV Studio.exe`**. Al suo primo avvio l'app si prepara per ~20 secondi,
+   poi parte sempre subito.
 
-Non serve installare Python né altro, e non serve internet: tutto è dentro l'eseguibile.
-Nella cartella resta visibile solo l'`.exe`; i file dell'app vanno in una cartella nascosta `.uivstudio`
-accanto a lui. Una nuova versione dell'eseguibile si aggiorna da sola allo stesso modo.
+Per **aggiornare** basta rilanciare l'installer. Non serve installare Python né altro: serve internet solo
+per il download. I file interni dell'app vanno in una cartella nascosta `.uivstudio`.
 
 > [!NOTE]
 > **Linux** richiede una sessione **X11/Xorg**. Sotto Wayland il sistema blocca a qualsiasi applicazione
@@ -158,7 +164,11 @@ python -m uiv_studio                               # avvia l'app
 python tests/test_engine_e2e.py                    # test end-to-end del motore (non muove il mouse)
 ```
 
-**Eseguibile Windows** (unico file, creato nella root del progetto):
+**Rilascio di una nuova versione:** aggiorna `__version__` in `uiv_studio/__init__.py`, poi
+`git tag v1.0.1 && git push --tags`. GitHub Actions compila gli eseguibili Windows e Linux e li allega alla
+Release; gli installer scaricano sempre l'ultima.
+
+**Eseguibile Windows in locale** (unico file, creato nella root del progetto):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1
@@ -190,7 +200,8 @@ uiv_studio/
   vision/    riquadro elemento, OCR, descrittore visivo, matcher
   engine/    cattura input, registratore, esecutore, azioni, video
   ui/        tema, widget animati, indicatore e menu di sessione, pagine
-launcher/    eseguibile unico: installa l'app al primo avvio e la avvia
+installer/   installer leggero della root: scarica l'eseguibile dalla Release
+launcher/    eseguibile unico: estrae l'app al primo avvio e la avvia
 packaging/   spec PyInstaller, script di build Windows/Linux, Dockerfile
 tests/       test end-to-end del motore
 docs/        screenshot

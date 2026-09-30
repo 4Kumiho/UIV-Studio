@@ -28,6 +28,7 @@ excludes = [
     "PySide6.QtSerialPort", "PySide6.QtSql", "PySide6.QtTest", "PySide6.QtDesigner", "PySide6.QtHelp",
     "PySide6.QtRemoteObjects", "PySide6.QtScxml", "PySide6.QtSpatialAudio", "PySide6.QtTextToSpeech",
     "PySide6.QtWebSockets", "PySide6.QtHttpServer", "PySide6.QtOpenGL", "PySide6.QtOpenGLWidgets",
+    "PySide6.QtNetwork", "PySide6.QtVirtualKeyboard",
 ]
 
 a = Analysis(
@@ -41,7 +42,10 @@ a = Analysis(
 
 # Drop heavy Qt payloads that slip in through plugins
 _skip = ("Qt6WebEngine", "Qt6Quick", "Qt6Qml", "Qt6Pdf", "Qt6Designer", "Qt63D", "qtwebengine", "QtWebEngineProcess",
-         "opengl32sw", "Qt6Multimedia", "Qt6Charts", "Qt6Graphs", "Qt6DataVisualization", "translations")
+         "opengl32sw", "Qt6Multimedia", "Qt6Charts", "Qt6Graphs", "Qt6DataVisualization", "translations",
+         "Qt6Network", "QtNetwork", "Qt6VirtualKeyboard", "qtvirtualkeyboard", "plugins/tls", "plugins\tls",
+         "networkinformation", "qpdf", "qtiff", "qwebp", "qicns", "qtga", "qwbmp", "qdirect2d", "qtuiotouch",
+         "PIL/_avif", "PIL\_avif", "PIL/_webp", "PIL\_webp", "PIL/_imagingcms", "PIL\_imagingcms")
 a.binaries = [b for b in a.binaries if not any(s in b[0] for s in _skip)]
 a.datas = [d for d in a.datas if not any(s in d[0] for s in _skip)]
 

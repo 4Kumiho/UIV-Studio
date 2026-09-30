@@ -27,15 +27,15 @@ MAGIC = b"UIVPAYLD"
 
 def main():
     PAYLOAD.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(PAYLOAD, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+    with zipfile.ZipFile(PAYLOAD, "w", zipfile.ZIP_LZMA) as z:
         for p in sorted(APP.rglob("*")):
             arc = p.relative_to(APP).as_posix()
             if p.is_dir():
                 continue
             info = zipfile.ZipInfo.from_file(p, arc)
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_LZMA  # much smaller than deflate: keeps the exe under GitHub's 100 MB limit
             with open(p, "rb") as f:
-                z.writestr(info, f.read(), compresslevel=6)
+                z.writestr(info, f.read())
     digest = hashlib.sha256(PAYLOAD.read_bytes()).hexdigest()[:12]
     version = f"{__version__}-{digest}".encode()
     size = PAYLOAD.stat().st_size
