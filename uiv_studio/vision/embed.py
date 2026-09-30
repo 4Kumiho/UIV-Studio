@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Visual descriptor for element crops.
 
 If `resources/models/embedder.onnx` exists (see tools/export_embedder.py, a

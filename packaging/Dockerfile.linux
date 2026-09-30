@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 # Build container with an old glibc (2.31, Debian 11) so the executable runs on Ubuntu 20.04+, Debian 11+,
 # RHEL/Rocky 9, Fedora, openSUSE, Arch, Mint, ... (x86_64).
 FROM python:3.11-bullseye

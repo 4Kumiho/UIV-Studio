@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Glue the launcher and the zipped application into the single distributable executable.
 
 Inputs : build/out_launcher/UIV Studio(.exe)   (launcher, PyInstaller onefile)

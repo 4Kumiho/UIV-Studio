@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Global mouse/keyboard capture -> high-level user actions.
 
 Runs pynput listeners and turns raw events into:

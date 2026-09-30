@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Element bounding box around a click point.
 
 Strategy: build an edge/structure map, find contours, keep the ones containing the

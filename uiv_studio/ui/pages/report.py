@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Run report: step results, expected vs found, scores, synced video, HTML export."""
 
 import base64

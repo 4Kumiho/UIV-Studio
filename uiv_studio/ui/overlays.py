@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Always-on-top session overlays: the HUD pill and the pause menu."""
 
 import sys

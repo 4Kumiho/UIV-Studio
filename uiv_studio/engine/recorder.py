@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Recording session: capture user actions and turn them into steps.
 
 Capture never blocks: events go to a queue and a worker thread does the heavy

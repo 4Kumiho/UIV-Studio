@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Render the UIV Studio icon (transparent background) -> resources/icon.png + icon.ico (multi-size)."""
 
 import sys

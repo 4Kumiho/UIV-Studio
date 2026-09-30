@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Glue between engine sessions (Recorder / Player) and on-screen overlays."""
 
 from pathlib import Path

@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Line icons (Lucide-style, MIT) rendered from inline SVG with any color."""
 
 from functools import lru_cache

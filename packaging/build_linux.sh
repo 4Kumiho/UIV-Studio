@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
 # Build the single distributable "UIV Studio" in the project root (one executable file, like on Windows).
 # For maximum compatibility build inside the old-glibc container:
 #     docker build -t uiv-build -f packaging/Dockerfile.linux .

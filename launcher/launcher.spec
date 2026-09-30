@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 # Small single-file launcher (the payload is appended afterwards by packaging/make_single_exe.py)
 import os
 import sys

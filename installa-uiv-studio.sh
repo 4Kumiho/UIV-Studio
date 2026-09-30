@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
 # UIV Studio installer for Linux: downloads the latest "UIV Studio" executable
 # next to this script and starts it. Run it again to update.
 set -e

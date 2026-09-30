@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """OCR on top of RapidOCR (PP-OCRv4 models on ONNX Runtime, ~15 MB, CPU friendly).
 
 Three speed paths:

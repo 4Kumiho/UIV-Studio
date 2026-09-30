@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Locate a recorded element on the live screen.
 
 Per stage (a fresh screenshot each time):

@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """OpenCV-backed video player (codec independent) with a step-marker timeline."""
 
 import cv2

@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Design tokens and the global Qt stylesheet (dark theme)."""
 
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QPalette

@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """OPTIONAL, developer-only: export a MobileNetV3-Small feature extractor to ONNX.
 
 UIV Studio works without it (hand-crafted HOG + color descriptor). With the CNN

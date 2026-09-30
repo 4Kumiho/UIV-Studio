@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (QComboBox, QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLineEdit,
                                QVBoxLayout, QWidget)
@@ -147,7 +150,7 @@ class SettingsPage(Page):
         ge.lay.addWidget(wl)
         ge.lay.addLayout(ws_row)
         from uiv_studio.vision.embed import Embedder
-        about = label(f"UIV Studio {__version__}  ·  " + tr("set.models", kind="CNN" if Embedder.kind() == "cnn" else "HOG+color"), "Faint")
+        about = label(f"UIV Studio {__version__}  ·  © 2026 4Kumiho  ·  " + tr("set.models", kind="CNN" if Embedder.kind() == "cnn" else "HOG+color"), "Faint")
         about.setStyleSheet("background: transparent;")
         ge.lay.addWidget(about)
 

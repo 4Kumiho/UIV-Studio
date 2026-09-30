@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 # PyInstaller spec for UIV Studio.
 #   pyinstaller packaging/uiv_studio.spec            -> dist/UIV Studio(.exe)   single file
 #   UIV_ONEDIR=1 pyinstaller packaging/uiv_studio.spec -> dist/UIV Studio/       folder (payload of the single executable)

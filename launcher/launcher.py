@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """UIV Studio single-file launcher.
 
 The distributed executable is this launcher with the whole application appended

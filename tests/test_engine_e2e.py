@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Headless end-to-end test of Recorder -> Recording -> Player (no real input is generated)."""
 
 import tempfile

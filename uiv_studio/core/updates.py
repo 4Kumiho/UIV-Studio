@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Check GitHub Releases for a newer version and replace the executable in place."""
 
 import json

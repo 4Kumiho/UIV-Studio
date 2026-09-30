@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 # Small installer executable placed in the repository root ("Installa UIV Studio.exe")
 import os
 import sys

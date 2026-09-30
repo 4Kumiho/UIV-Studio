@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Canonical key names shared by recorder, player, hotkeys and the Settings UI.
 
 A hotkey is stored as a '+'-joined, order-independent set of canonical names,

@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Filesystem locations: bundled resources, per-user config, default workspace."""
 
 import os

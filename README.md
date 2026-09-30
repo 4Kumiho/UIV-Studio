@@ -207,3 +207,13 @@ packaging/   spec PyInstaller, script di build Windows/Linux, Dockerfile
 tests/       test end-to-end del motore
 docs/        screenshot
 ```
+
+---
+
+## 📄 Licenza
+
+Copyright © 2026 **4Kumiho**. Tutti i diritti riservati.
+
+UIV Studio è stato ideato e realizzato da 4Kumiho. Il codice è pubblico solo in consultazione: puoi scaricare
+e usare gli eseguibili ufficiali, ma copiare, modificare o ridistribuire il software richiede
+l'autorizzazione scritta dell'autore. Dettagli in [LICENSE](LICENSE).

@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Italian / English strings. `tr(key, **fmt)`; missing keys fall back to English, then to the key."""
 
 _lang = "it"

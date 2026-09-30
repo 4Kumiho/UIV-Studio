@@ -1,0 +1,62 @@
+UIV Studio
+Copyright (c) 2026 4Kumiho. All rights reserved.
+
+-------------------------------------------------------------------------------
+ITALIANO
+-------------------------------------------------------------------------------
+
+UIV Studio (il "Software"), compresi codice sorgente, eseguibili, icone, grafica
+e documentazione, è stato ideato e realizzato da 4Kumiho, che ne è l'unico
+autore e titolare di tutti i diritti.
+
+Il codice sorgente è reso visibile pubblicamente solo a scopo di consultazione.
+La pubblicazione NON concede alcuna licenza open source.
+
+È consentito, senza costi:
+  - scaricare e usare gli eseguibili ufficiali distribuiti da 4Kumiho
+    (repository https://github.com/4Kumiho/UIV-Studio e relative Release)
+    per uso personale o all'interno della propria organizzazione.
+
+Senza autorizzazione scritta di 4Kumiho è vietato:
+  - copiare, modificare, adattare o creare opere derivate dal Software o da
+    parti di esso;
+  - ridistribuire, pubblicare, concedere in sublicenza, vendere o noleggiare il
+    Software o parti di esso;
+  - rimuovere o alterare le indicazioni di autore e copyright.
+
+Il Software è fornito "così com'è", senza garanzie di alcun tipo. In nessun caso
+l'autore sarà responsabile di danni derivanti dall'uso del Software.
+
+Per richieste di autorizzazione: https://github.com/4Kumiho
+
+-------------------------------------------------------------------------------
+ENGLISH
+-------------------------------------------------------------------------------
+
+UIV Studio (the "Software"), including source code, executables, icons,
+artwork and documentation, was conceived and created by 4Kumiho, its sole
+author and owner of all rights.
+
+The source code is publicly visible for reference only. Publishing it does NOT
+grant any open source license.
+
+You may, free of charge:
+  - download and use the official executables distributed by 4Kumiho
+    (repository https://github.com/4Kumiho/UIV-Studio and its Releases)
+    for personal use or within your own organization.
+
+Without written permission from 4Kumiho you may not:
+  - copy, modify, adapt or create derivative works of the Software or any part
+    of it;
+  - redistribute, publish, sublicense, sell or rent the Software or any part
+    of it;
+  - remove or alter the author and copyright notices.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DAMAGES ARISING FROM THE USE OF THE SOFTWARE.
+
+For permission requests: https://github.com/4Kumiho
+
+Third-party components bundled in the executables (Qt/PySide6, OpenCV, ONNX
+Runtime, RapidOCR/PP-OCR models, NumPy, mss, pynput, Python) remain under their
+own licenses.

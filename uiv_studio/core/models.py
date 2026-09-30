@@ -1,3 +1,6 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
 """Plain data objects for recordings and runs."""
 
 from dataclasses import dataclass, field
