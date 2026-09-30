@@ -84,6 +84,12 @@ Nell'editor vedi ogni step sul suo screenshot. Puoi:
 
 <p align="center"><img src="docs/screenshots/editor.png" width="860" alt="Editor"></p>
 
+### Condividere le registrazioni
+
+Ogni utente ha la **sua** libreria, nella cartella `Documenti/UIV Studio` del proprio PC (non nella repo).
+Per passare una registrazione a un collega: menu della registrazione → **Esporta per condividere** crea un
+unico file `.uivr` (step + screenshot); il collega lo apre con **Importa** nella pagina Registrazioni.
+
 <p align="center"><img src="docs/screenshots/recordings.png" width="860" alt="Libreria registrazioni"></p>
 
 ### 3 · Esegui e leggi il report

@@ -2,9 +2,12 @@
 # Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QMenu, QToolButton, QVBoxLayout
+from pathlib import Path
 
-from uiv_studio.core.storage import delete_recording, duplicate_recording, list_recordings
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QMenu, QToolButton, QVBoxLayout
+
+from uiv_studio.core.storage import (delete_recording, duplicate_recording, export_recording,
+                                     import_recording, list_recordings, safe_name)
 from uiv_studio.ui import icons
 from uiv_studio.ui.dialogs import ask_text, confirm, error_box
 from uiv_studio.ui.i18n import tr
@@ -57,10 +60,18 @@ class RecordingCard(HoverCard):
 
     def _menu(self):
         m = QMenu(self)
+        m.addAction(icons.icon("file", C["text"]), tr("rec.export"), self._export)
         m.addAction(icons.icon("copy", C["text"]), tr("common.duplicate"), self._duplicate)
         m.addSeparator()
         m.addAction(icons.icon("trash", C["danger"]), tr("common.delete"), self._delete)
         m.exec(self.more.mapToGlobal(self.more.rect().bottomLeft()))
+
+    def _export(self):
+        default = str(Path.home() / f"{safe_name(self.rec['name'])}.uivr")
+        dest, _ = QFileDialog.getSaveFileName(self, tr("rec.export"), default, tr("rec.filter"))
+        if dest:
+            export_recording(self.rec["path"], Path(dest))
+            self.page.app.toast(tr("rec.exported"), "success")
 
     def _duplicate(self):
         name = ask_text(self, tr("common.duplicate"), tr("rec.dup_name"), f"{self.rec['name']} (2)")
@@ -87,9 +98,13 @@ class RecordingsPage(Page):
         self.search.setFixedWidth(260)
         self.search.addAction(icons.icon("search", C["text3"], 16), QLineEdit.LeadingPosition)
         self.search.textChanged.connect(self._populate)
+        imp = button(tr("rec.import"), "folder")
+        imp.setToolTip(tr("rec.import_tip"))
+        imp.clicked.connect(self._import)
         new = button(tr("rec.new"), "plus", "Primary")
         new.clicked.connect(app.new_recording)
         head.actions.addWidget(self.search)
+        head.actions.addWidget(imp)
         head.actions.addWidget(new)
         self.body.addWidget(head)
         self.grid = FlowGrid(320)
@@ -99,6 +114,19 @@ class RecordingsPage(Page):
         self.body.addWidget(self.empty)
         self.body.addStretch()
         self.recs = []
+
+    def _import(self):
+        files, _ = QFileDialog.getOpenFileNames(self, tr("rec.import"), str(Path.home()), tr("rec.filter"))
+        done = []
+        for f in files:
+            try:
+                _, name = import_recording(self.app.settings.workspace, Path(f))
+                done.append(name)
+            except Exception:
+                self.app.toast(tr("rec.import_bad", f=Path(f).name), "error")
+        if done:
+            self.app.toast(tr("rec.imported", names=", ".join(done)), "success")
+            self.refresh()
 
     def refresh(self):
         self.recs = list_recordings(self.app.settings.workspace)

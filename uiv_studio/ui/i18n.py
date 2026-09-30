@@ -86,6 +86,13 @@ T = {
     "rec.run": ("Esegui", "Run"),
     "rec.empty": ("Nessuna registrazione. Creane una nuova per iniziare.", "No recordings. Create a new one to get started."),
     "rec.dup_name": ("Nome della copia", "Copy name"),
+    "rec.export": ("Esporta per condividere", "Export to share"),
+    "rec.exported": ("Registrazione esportata", "Recording exported"),
+    "rec.import": ("Importa", "Import"),
+    "rec.import_tip": ("Importa registrazioni (.uivr) ricevute da altri", "Import recordings (.uivr) received from others"),
+    "rec.imported": ("Importata: {names}", "Imported: {names}"),
+    "rec.import_bad": ("“{f}” non è una registrazione valida", "“{f}” is not a valid recording"),
+    "rec.filter": ("Registrazioni UIV Studio (*.uivr)", "UIV Studio recordings (*.uivr)"),
     "rec.exists": ("Esiste già una registrazione con questo nome.", "A recording with this name already exists."),
     # ---------------------------------------------------------------- new recording dialog
     "newrec.title": ("Nuova registrazione", "New recording"),

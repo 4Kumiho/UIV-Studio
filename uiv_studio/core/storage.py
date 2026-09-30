@@ -267,6 +267,38 @@ def duplicate_recording(path: Path, new_name: str) -> Path:
     return dst / RECORDING_FILE
 
 
+def export_recording(path: Path, dest: Path):
+    """Write a self-contained copy of a recording (single .uivr file) to share it."""
+    with closing(sqlite3.connect(str(path))) as src, closing(sqlite3.connect(str(dest))) as dst:
+        src.backup(dst)
+    with closing(sqlite3.connect(str(dest))) as con:   # single file, no WAL side files
+        con.execute("PRAGMA journal_mode = DELETE")
+
+
+def import_recording(workspace: Path, file: Path) -> tuple[Path, str]:
+    """Copy a shared .uivr into the workspace; renames it if the name is taken. Returns (path, name)."""
+    with closing(sqlite3.connect(f"file:{Path(file).as_posix()}?mode=ro", uri=True)) as con:
+        try:
+            name = con.execute("SELECT name FROM info").fetchone()[0]
+            con.execute("SELECT COUNT(*) FROM step").fetchone()
+        except sqlite3.DatabaseError as exc:
+            raise ValueError("not a UIV Studio recording") from exc
+    root = workspace / "recordings"
+    final, n = name, 1
+    while (root / safe_name(final)).exists():
+        n += 1
+        final = f"{name} ({n})"
+    folder = root / safe_name(final)
+    folder.mkdir(parents=True)
+    target = folder / RECORDING_FILE
+    with closing(sqlite3.connect(f"file:{Path(file).as_posix()}?mode=ro", uri=True)) as src, \
+            closing(sqlite3.connect(str(target))) as dst:
+        src.backup(dst)
+        dst.execute("UPDATE info SET name = ? WHERE id = 1", (final,))
+        dst.commit()
+    return target, final
+
+
 # ============================================================ Run
 
 
