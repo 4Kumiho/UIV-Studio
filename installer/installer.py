@@ -12,7 +12,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-REPO = "4Kumiho/uiv-studio"
+REPO = "4Kumiho/UIV-Studio"
 if sys.platform == "win32":
     ASSET, TARGET = "UIV-Studio-windows.exe", "UIV Studio.exe"
 else:

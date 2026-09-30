@@ -38,7 +38,7 @@ consegna un report con punteggi, confronto atteso/trovato e video dell'esecuzion
 
 1. Scarica la repo (**Code → Download ZIP**) oppure clonala:
    ```bash
-   git clone https://github.com/4Kumiho/uiv-studio.git
+   git clone https://github.com/4Kumiho/UIV-Studio.git
    ```
 2. Nella cartella avvia l'installer:
    - **Windows:** doppio click su **`Installa UIV Studio.exe`**

@@ -3,7 +3,7 @@
 # next to this script and starts it. Run it again to update.
 set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"
-URL="https://github.com/4Kumiho/uiv-studio/releases/latest/download/UIV-Studio-linux"
+URL="https://github.com/4Kumiho/UIV-Studio/releases/latest/download/UIV-Studio-linux"
 DEST="$DIR/UIV Studio"
 
 echo "UIV Studio: download dell'ultima versione / downloading the latest version..."
