@@ -2,4 +2,4 @@
 
 APP_NAME = "UIV Studio"
 APP_ID = "uiv-studio"
-__version__ = "1.0.0"
+__version__ = "1.1.0"

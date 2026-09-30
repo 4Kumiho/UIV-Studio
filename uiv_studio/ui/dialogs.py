@@ -284,3 +284,128 @@ class WelcomeDialog(BaseDialog):
         r.addWidget(ok)
         self.root.addSpacing(6)
         self.root.addLayout(r)
+
+
+
+class UpdateDialog(BaseDialog):
+    """Check GitHub Releases; download and install a newer version in place."""
+
+    _progress = Signal(int, int)
+    _checked = Signal(object)
+    _downloaded = Signal(object)
+
+    def __init__(self, parent=None, prefetched: dict | None = None):
+        super().__init__(tr("upd.title"), parent)
+        from PySide6.QtWidgets import QProgressBar
+        from uiv_studio import __version__
+        from uiv_studio.ui.widgets import Spinner
+        self.setMinimumWidth(480)
+        self.info = None
+        self.root.addWidget(label(tr("upd.current", v=__version__), "Faint"))
+        row = QHBoxLayout()
+        self.spinner = Spinner(22)
+        self.msg = label(tr("upd.checking"), wrap=True)
+        row.addWidget(self.spinner)
+        row.addWidget(self.msg, 1)
+        self.root.addLayout(row)
+        self.bar = QProgressBar()
+        self.bar.setTextVisible(False)
+        self.bar.setFixedHeight(8)
+        self.bar.setStyleSheet(
+            f"QProgressBar {{ background: {C['surface3']}; border: none; border-radius: 4px; }}"
+            f"QProgressBar::chunk {{ background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 {C['accent']}, "
+            f"stop:1 {C['cyan']}); border-radius: 4px; }}")
+        self.bar.hide()
+        self.root.addWidget(self.bar)
+        foot = QHBoxLayout()
+        foot.addStretch()
+        self.close_btn = button(tr("common.close"), obj="Ghost")
+        self.close_btn.clicked.connect(self.reject)
+        self.go = button(tr("upd.install"), "refresh", "Primary")
+        self.go.setMinimumHeight(40)
+        self.go.hide()
+        self.go.clicked.connect(self._install)
+        foot.addWidget(self.close_btn)
+        foot.addWidget(self.go)
+        self.root.addSpacing(6)
+        self.root.addLayout(foot)
+        self._progress.connect(self._on_progress)
+        self._checked.connect(self._on_checked)
+        self._downloaded.connect(self._on_downloaded)
+        if prefetched is not None:
+            self._on_checked(prefetched)
+        else:
+            import threading
+            threading.Thread(target=self._check, daemon=True).start()
+
+    def _check(self):
+        from uiv_studio.core.updates import latest_release
+        try:
+            self._checked.emit(latest_release())
+        except Exception as exc:
+            self._checked.emit(exc)
+
+    def _error(self, exc):
+        self.spinner.hide()
+        self.msg.setText(tr("upd.error", e=exc))
+        self.msg.setStyleSheet(f"color: {C['danger']};")
+
+    def _on_checked(self, res):
+        self.spinner.hide()
+        if isinstance(res, Exception):
+            return self._error(res)
+        self.info = res
+        if not res["newer"]:
+            self.msg.setText("✓  " + tr("upd.latest"))
+            self.msg.setStyleSheet(f"color: {C['success']};")
+            return
+        self.msg.setText(tr("upd.available", v=res["version"]))
+        self.msg.setStyleSheet(f"color: {C['accent2']}; font-weight: 600;")
+        self.go.show()
+
+    def _install(self):
+        from uiv_studio.core.updates import RELEASES_PAGE, launcher_path
+        launcher = launcher_path()
+        if launcher is None or not self.info.get("url"):
+            # Running from source: open the release page instead
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(QUrl(RELEASES_PAGE))
+            return
+        self.go.setEnabled(False)
+        self.close_btn.setEnabled(False)
+        self.bar.show()
+        self.msg.setText(tr("upd.downloading"))
+        self.msg.setStyleSheet("")
+        import threading
+
+        def work():
+            from uiv_studio.core.updates import download
+            dest = launcher.with_name(launcher.name + ".new")
+            try:
+                download(self.info["url"], dest, lambda d, t: self._progress.emit(d, t))
+                self._downloaded.emit((dest, launcher))
+            except Exception as exc:
+                self._downloaded.emit(exc)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _on_progress(self, done, total):
+        self.bar.setMaximum(max(total, 1))
+        self.bar.setValue(done)
+        if total:
+            self.msg.setText(f"{tr('upd.downloading')}  {done / 1e6:.0f} / {total / 1e6:.0f} MB")
+
+    def _on_downloaded(self, res):
+        if isinstance(res, Exception):
+            self._error(res)
+            self.close_btn.setEnabled(True)
+            self.go.setEnabled(True)
+            return
+        from PySide6.QtWidgets import QApplication
+        from uiv_studio.core.updates import install_and_restart
+        self.msg.setText(tr("upd.restarting"))
+        try:
+            install_and_restart(*res)
+        except Exception as exc:
+            return self._on_downloaded(exc)
+        QApplication.quit()

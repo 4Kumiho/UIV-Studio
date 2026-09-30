@@ -151,9 +151,11 @@ def cleanup_old(root: Path, keep: str):
             shutil.rmtree(p, ignore_errors=True)   # best effort; retried at the next update
 
 
-def launch(app_dir: Path):
+def launch(app_dir: Path, launcher: Path):
     exe = app_dir / APP_EXE
-    kwargs = {"cwd": str(app_dir)}
+    # Tell the app which file to replace when it updates itself
+    env = dict(os.environ, UIV_LAUNCHER=str(launcher))
+    kwargs = {"cwd": str(app_dir), "env": env}
     if sys.platform == "win32":
         kwargs["creationflags"] = 0x00000008 | 0x00000200  # DETACHED_PROCESS | NEW_PROCESS_GROUP
     else:
@@ -237,7 +239,7 @@ def main():
     if not (app_dir / ".complete").exists():
         run_with_window(lambda progress: extract(exe, offset, size, app_dir, progress))
         cleanup_old(root, keep=version)
-    launch(app_dir)
+    launch(app_dir, exe)
 
 
 if __name__ == "__main__":

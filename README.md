@@ -48,7 +48,8 @@ consegna un report con punteggi, confronto atteso/trovato e video dell'esecuzion
 4. Da quel momento apri l'app con **`UIV Studio.exe`**. Al suo primo avvio l'app si prepara per ~20 secondi,
    poi parte sempre subito.
 
-Per **aggiornare** basta rilanciare l'installer. Non serve installare Python né altro: serve internet solo
+Per **aggiornare** usa il pulsante **Verifica aggiornamenti** nella barra laterale dell'app (all'avvio l'app
+controlla da sola e ti avvisa), oppure rilancia l'installer. Non serve installare Python né altro: serve internet solo
 per il download. I file interni dell'app vanno in una cartella nascosta `.uivstudio`.
 
 > [!NOTE]

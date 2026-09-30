@@ -4,13 +4,13 @@ import logging
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QTimer
+from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QTimer, Signal
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QMessageBox, QWidget
 
 from uiv_studio import APP_NAME, __version__
 from uiv_studio.core.settings import Settings
 from uiv_studio.core.storage import Recording
-from uiv_studio.ui.dialogs import NewRecordingDialog, RunDialog, WelcomeDialog, error_box
+from uiv_studio.ui.dialogs import NewRecordingDialog, RunDialog, UpdateDialog, WelcomeDialog, error_box
 from uiv_studio.ui.i18n import set_language, tr
 from uiv_studio.ui.pages.editor import EditorPage
 from uiv_studio.ui.pages.home import HomePage
@@ -28,15 +28,22 @@ HOME, RECORDINGS, RUNS, SETTINGS, EDITOR, REPORT = range(6)
 
 
 class MainWindow(QMainWindow):
+    update_found = Signal(object)
+
     def __init__(self, settings: Settings):
         super().__init__()
         self.settings = settings
         self.session = None
+        self._update_info = None
         self.setWindowTitle(APP_NAME)
         self.resize(1360, 860)
         self.setMinimumSize(1080, 680)
         self._build()
         threading.Thread(target=self._warmup, daemon=True).start()
+        self.update_found.connect(self._mark_update)
+        threading.Thread(target=self._silent_update_check, daemon=True).start()
+        from uiv_studio.core.updates import cleanup_old
+        cleanup_old()
 
     # ------------------------------------------------------------------ build
     def _build(self):
@@ -49,6 +56,11 @@ class MainWindow(QMainWindow):
         self.sidebar = Sidebar([("home", tr("nav.home")), ("layers", tr("nav.recordings")),
                                 ("runs", tr("nav.runs")), ("settings", tr("nav.settings"))])
         from uiv_studio.ui.widgets import button
+        self.update_btn = button(tr("upd.button"), "refresh", "Ghost")
+        self.update_btn.clicked.connect(self.show_updates)
+        self.sidebar.footer.addWidget(self.update_btn)
+        if self._update_info:
+            self._style_update_button()
         guide = button(tr("welcome.help"), "sparkles", "Ghost")
         guide.clicked.connect(self.show_welcome)
         self.sidebar.footer.addWidget(guide)
@@ -211,6 +223,29 @@ class MainWindow(QMainWindow):
         d = self.settings.snapshot()
         d["general"]["welcome_done"] = True
         self.settings.save(d)
+
+    def _silent_update_check(self):
+        try:
+            from uiv_studio.core.updates import latest_release
+            info = latest_release(timeout=6)
+            if info["newer"]:
+                self.update_found.emit(info)
+        except Exception:
+            pass  # offline or rate-limited: the manual button still works
+
+    def _mark_update(self, info):
+        self._update_info = info
+        self._style_update_button()
+        self.toast(tr("upd.toast", v=info["version"]), "info")
+
+    def _style_update_button(self):
+        from uiv_studio.ui import icons
+        self.update_btn.setText(tr("upd.button_new"))
+        self.update_btn.setIcon(icons.icon("dot", C["accent2"], 18))
+        self.update_btn.setStyleSheet(f"color: {C['accent2']};")
+
+    def show_updates(self):
+        UpdateDialog(self, prefetched=self._update_info).exec()
 
     def show_welcome(self):
         WelcomeDialog(self.settings.data, self).exec()
