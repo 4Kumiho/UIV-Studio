@@ -18,7 +18,7 @@ datas += collect_data_files("rapidocr_onnxruntime")          # PP-OCR models + c
 
 hidden = collect_submodules("pynput") + collect_submodules("rapidocr_onnxruntime")
 if sys.platform.startswith("linux"):
-    hidden += collect_submodules("Xlib")
+    hidden += collect_submodules("Xlib") + collect_submodules("jeepney")
 
 # Qt modules we never use: keeps the bundle small
 excludes = [

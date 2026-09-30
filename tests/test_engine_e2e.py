@@ -88,9 +88,26 @@ def record(ws: Path, frame) -> Path:
 def play(ws: Path, rec_path: Path, screen, exe_w, exe_h, exe_scale=1.0):
     import uiv_studio.engine.player as player_mod
 
-    player_mod.ScreenGrabber.grab = lambda self: screen
+    import uiv_studio.platform as backend
+
+    class _Grab:
+        def grab(self):
+            return screen
+
+        def close(self):
+            pass
+
+    class _NoHotkeys:
+        def start(self):
+            pass
+
+        def stop(self):
+            pass
+
+    backend.make_grabber = lambda monitor: _Grab()
+    backend.make_hotkey_listener = lambda combo, cb: _NoHotkeys()
     fake = FakeActuator()
-    player_mod.Actuator = lambda cfg: fake
+    backend.make_actuator = lambda cfg, monitor: fake
     s = Settings.defaults()
     s["execution"]["record_video"] = False
     s["execution"]["delay_between_steps_s"] = 0

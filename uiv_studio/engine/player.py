@@ -10,15 +10,14 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
-from pynput import keyboard
 from PySide6.QtCore import QObject, Signal
 
-from uiv_studio.core.keys import parse_combo, pynput_key_name
+from uiv_studio.core.keys import parse_combo
 from uiv_studio.core.models import Action, MatchInfo, RunInfo, RunStep, Status, Step, Target
-from uiv_studio.core.screens import Monitor, ScreenGrabber
+from uiv_studio.core.screens import Monitor
 from uiv_studio.core.storage import VIDEO_FILE, Recording, Run
-from uiv_studio.engine.actions import Actuator
 from uiv_studio.engine.video import VideoRecorder
+from uiv_studio import platform as backend
 from uiv_studio.vision.embed import Embedder
 from uiv_studio.vision.matcher import Geometry, Matcher
 from uiv_studio.vision.ocr import OCR
@@ -49,7 +48,6 @@ class Player(QObject):
         self._stop = threading.Event()
         self._skip = threading.Event()
         self._menu_combo = parse_combo(settings["hotkeys"]["player_menu"])
-        self._pressed: set[str] = set()
         self._kb = None
         self.run: Run | None = None
 
@@ -73,23 +71,6 @@ class Player(QObject):
     def paused(self) -> bool:
         return self._paused.is_set()
 
-    # ------------------------------------------------------------ hotkey
-    def _on_press(self, key, injected=False):
-        if injected:  # our own simulated key presses must never open the menu
-            return
-        name = pynput_key_name(key)
-        if name:
-            self._pressed.add(name)
-            if self._menu_combo and self._pressed == set(self._menu_combo):
-                self.hotkey.emit("menu")
-
-    def _on_release(self, key, injected=False):
-        if injected:
-            return
-        name = pynput_key_name(key)
-        if name:
-            self._pressed.discard(name)
-
     # ------------------------------------------------------------ main loop
     def _main(self):
         rec = None
@@ -111,13 +92,13 @@ class Player(QObject):
                 started_at=datetime.now().isoformat(timespec="seconds"),
                 screen_w=m.width, screen_h=m.height, scale=m.scale))
             geo = Geometry(info.screen_w, info.screen_h, info.scale, m.width, m.height, m.scale)
-            grabber = ScreenGrabber(m)
-            actuator = Actuator(self.settings["execution"])
+            grabber = backend.make_grabber(m)
+            actuator = backend.make_actuator(self.settings["execution"], m)
             matcher = Matcher(grabber.grab, geo, self.settings["validation"],
                               should_abort=lambda: self._paused.is_set() or self._stop.is_set(),
                               on_stage=lambda s, n: self.stage_changed.emit(s, n))
 
-            self._kb = keyboard.Listener(on_press=self._on_press, on_release=self._on_release)
+            self._kb = backend.make_hotkey_listener(self._menu_combo, lambda: self.hotkey.emit("menu"))
             self._kb.start()
 
             if self.settings["execution"]["record_video"]:
@@ -178,7 +159,7 @@ class Player(QObject):
                 self.run.close()
             self.finished.emit(path, result)
 
-    def _execute(self, step: Step, matcher: Matcher, act: Actuator):
+    def _execute(self, step: Step, matcher: Matcher, act):
         """Returns (status, match, drop_match, error)."""
         if step.wait_s > 0 and step.action != Action.WAIT:
             self._sleep(step.wait_s)

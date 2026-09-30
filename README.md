@@ -11,7 +11,8 @@ schermo: prima di ogni azione UIV Studio verifica che l'elemento giusto sia davv
 consegna un report con punteggi, confronto atteso/trovato e video dell'esecuzione.
 
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-X11-FCC624?logo=linux&logoColor=black)
+![Linux](https://img.shields.io/badge/Linux-X11%20%7C%20GNOME%20Wayland-FCC624?logo=linux&logoColor=black)
+![Wayland E2E](https://github.com/4Kumiho/UIV-Studio/actions/workflows/wayland-e2e.yml/badge.svg)
 ![Qt](https://img.shields.io/badge/UI-Qt%206%20(PySide6)-41CD52?logo=qt&logoColor=white)
 ![ONNX](https://img.shields.io/badge/AI-ONNX%20Runtime%20%C2%B7%20CPU-005CED)
 ![Lingue](https://img.shields.io/badge/lingua-IT%20%7C%20EN-7C6CFF)
@@ -52,9 +53,24 @@ Per **aggiornare** usa il pulsante **Verifica aggiornamenti** nella barra latera
 controlla da sola e ti avvisa), oppure rilancia l'installer. Non serve installare Python né altro: serve internet solo
 per il download. I file interni dell'app vanno in una cartella nascosta `.uivstudio`.
 
-> [!NOTE]
-> **Linux** richiede una sessione **X11/Xorg**. Sotto Wayland il sistema blocca a qualsiasi applicazione
-> la cattura globale di mouse, tastiera e schermo (al login scegli “GNOME su Xorg” o equivalente).
+### 🐧 Linux: X11 e GNOME Wayland
+
+| Sessione | Registrazione | Esecuzione | Note |
+|---|---|---|---|
+| **GNOME su Wayland** (Ubuntu, Fedora, Debian) | ✅ | ✅ | una tantum: `sudo usermod -aG input $USER`, poi esci e rientra |
+| **X11 / Xorg** (qualsiasi desktop) | ✅ | ✅ | nessuna configurazione |
+| Altri compositor Wayland (KDE, Sway…) | ❌ | ❌ | usa una sessione X11 |
+
+Su Wayland ogni app è isolata, quindi UIV Studio usa i servizi ufficiali di GNOME:
+- **schermo** → *Mutter ScreenCast* via **PipeWire**
+- **click, tasti e scroll** → *Mutter RemoteDesktop*
+- **registrazione** → lettura diretta di mouse, tastiera e touchpad da `/dev/input`, per questo serve il gruppo `input`.
+  Durante la registrazione UIV Studio gestisce lui il puntatore, così conosce la posizione esatta di ogni click;
+  l'accelerazione del mouse può sembrare leggermente diversa.
+
+Il layout della tastiera (per esempio italiano, con “@” e lettere accentate) viene letto dalle impostazioni di GNOME.
+Tutto questo è verificato da un test automatico su GNOME Wayland vero a ogni modifica
+([`tests/wayland`](tests/wayland)).
 
 Al primo avvio una breve guida spiega i tre passi fondamentali:
 
@@ -169,6 +185,14 @@ python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt      # Linux: .venv/bin/pip
 python -m uiv_studio                               # avvia l'app
 python tests/test_engine_e2e.py                    # test end-to-end del motore (non muove il mouse)
+```
+
+**Provare su GNOME Wayland** (anche da Windows, con Docker Desktop): un GNOME headless con mutter,
+XWayland e PipeWire, un'app di prova, registrazione tramite mouse/tastiera virtuali ed esecuzione reale.
+
+```bash
+docker build -t uiv-wayland -f tests/wayland/Dockerfile .
+docker run --rm --privileged -v "$PWD":/src uiv-wayland bash tests/wayland/session.sh python tests/wayland/e2e_wayland.py
 ```
 
 **Rilascio di una nuova versione:** aggiorna `__version__` in `uiv_studio/__init__.py`, poi

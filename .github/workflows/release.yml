@@ -8,7 +8,10 @@ on:
 permissions:
   contents: write
 jobs:
+  wayland-e2e:
+    uses: ./.github/workflows/wayland-e2e.yml
   windows:
+    needs: wayland-e2e
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +24,7 @@ jobs:
           files: UIV-Studio-windows.exe
           tag_name: ${{ github.ref_name }}
   linux:
+    needs: wayland-e2e
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QLabel, QLineEdi
                                QWidget)
 
 from uiv_studio.core.keys import display_combo
-from uiv_studio.core.screens import Monitor, ScreenGrabber, list_monitors
+from uiv_studio.core.screens import Monitor
+from uiv_studio.platform import list_monitors, make_grabber
 from uiv_studio.core.storage import list_recordings
 from uiv_studio.ui import icons
 from uiv_studio.ui.i18n import tr
@@ -34,7 +35,7 @@ class MonitorCard(HoverCard):
         self.selected = False
         self.setFixedSize(236, 178)
         try:
-            g = ScreenGrabber(monitor)
+            g = make_grabber(monitor)
             self.thumb = bgr_to_pixmap(g.grab(), 440)
             g.close()
         except Exception:
@@ -255,7 +256,7 @@ class WelcomeDialog(BaseDialog):
 
     def __init__(self, settings: dict, parent=None):
         super().__init__(tr("welcome.title"), parent)
-        self.setMinimumWidth(760)
+        self.setMinimumWidth(860)
         self.root.addWidget(label(tr("welcome.sub"), "Muted"))
         row = QHBoxLayout()
         row.setSpacing(14)
@@ -266,6 +267,7 @@ class WelcomeDialog(BaseDialog):
                 ("edit", ("#7C6CFF", "#3DD6D0"), "welcome.s2", tr("welcome.s2d")),
                 ("play", ("#3DD6D0", "#60A5FA"), "welcome.s3", tr("welcome.s3d"))):
             card = HoverCard(accent=colors[0])
+            card.setMinimumHeight(240)  # room for wider Linux fonts
             cl = QVBoxLayout(card)
             cl.setContentsMargins(18, 18, 18, 18)
             cl.setSpacing(8)

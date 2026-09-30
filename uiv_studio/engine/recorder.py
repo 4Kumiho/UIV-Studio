@@ -14,7 +14,8 @@ import threading
 from PySide6.QtCore import QObject, Signal
 
 from uiv_studio.core.models import Action, Step
-from uiv_studio.core.screens import Monitor, ScreenGrabber
+from uiv_studio.core.screens import Monitor
+from uiv_studio import platform as backend
 from uiv_studio.core.storage import Recording
 from uiv_studio.engine.capture import FrameBuffer, InputCapture
 from uiv_studio.engine.targets import build_target
@@ -45,7 +46,7 @@ class Recorder(QObject):
         self.monitor = monitor
         self.settings = settings
         self.own_windows = own_windows    # callable -> list of (x, y, w, h) global physical rects
-        self.frames = FrameBuffer(ScreenGrabber(monitor))
+        self.frames = FrameBuffer(backend.make_grabber(monitor))
         hk = settings["hotkeys"]
         self.capture = InputCapture(
             settings["recording"],
@@ -68,7 +69,7 @@ class Recorder(QObject):
             OCR.warmup()
             Embedder.warmup()
             self.frames.start()
-            self.capture.start()
+            self.capture.start(backend.make_input_source(self.capture, self.monitor))
             self._worker.start()
             self.capture.set_enabled(True)
             self._set_state("ready")

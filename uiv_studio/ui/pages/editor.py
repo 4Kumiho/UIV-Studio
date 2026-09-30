@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
 
 from uiv_studio.core.keys import MODIFIERS
 from uiv_studio.core.models import Action, Step, Target
-from uiv_studio.core.screens import ScreenGrabber, list_monitors
+from uiv_studio.platform import list_monitors, make_grabber
 from uiv_studio.core.storage import Recording, list_recordings
 from uiv_studio.engine.targets import rebuild_target
 from uiv_studio.ui import icons
@@ -601,7 +601,7 @@ class EditorPage(QWidget):
 
     def _grab_frame(self):
         try:
-            g = ScreenGrabber(self._pick_monitor())
+            g = make_grabber(self._pick_monitor())
             f = g.grab()
             g.close()
             return f

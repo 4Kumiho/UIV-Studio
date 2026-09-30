@@ -15,7 +15,6 @@ import threading
 import time
 from collections import deque
 
-from pynput import keyboard, mouse
 
 from uiv_studio.core.keys import MODIFIERS, format_combo, parse_combo, pynput_key_name
 
@@ -98,22 +97,21 @@ class InputCapture:
         self._scroll = None
         self._scroll_timer = None
         self._swallow: set[str] = set()     # keys belonging to a hotkey, until released
-        self._mouse = mouse.Listener(on_click=self._on_click, on_scroll=self._on_scroll)
-        self._keys = keyboard.Listener(on_press=self._on_press, on_release=self._on_release)
+        self.source = None                  # platform input source feeding button()/scroll()/key_*()
 
     # ------------------------------------------------------------ lifecycle
-    def start(self):
-        self._mouse.start()
-        self._keys.start()
+    def start(self, source=None):
+        """`source` feeds raw events; default: pynput (Windows / X11)."""
+        self.source = source or PynputSource(self)
+        self.source.start()
 
     def stop(self):
         self.flush()
         for t in (self._click_timer, self._scroll_timer):
             if t:
                 t.cancel()
-        for listener in (self._mouse, self._keys):
-            if listener.is_alive():
-                listener.stop()
+        if self.source is not None:
+            self.source.stop()
 
     def set_enabled(self, enabled: bool):
         with self._lock:
@@ -149,9 +147,8 @@ class InputCapture:
         return [m for m in MODIFIERS if m in self.pressed]
 
     # ------------------------------------------------------------ mouse
-    def _on_click(self, x, y, button, pressed, injected=False):
-        if injected:
-            return
+    def button(self, x, y, button: str, pressed: bool):
+        """button: 'left' | 'right' (others ignored); x, y global physical pixels."""
         with self._lock:
             if not self.enabled:
                 return
@@ -159,7 +156,7 @@ class InputCapture:
                 self._press = None
                 return
             now = time.monotonic()
-            if button == mouse.Button.left:
+            if button == "left":
                 if pressed:
                     self._press = (x, y, now, self.frames.before(now), self._mods())
                     return
@@ -172,7 +169,7 @@ class InputCapture:
                     self.emit("drag", {"x": px, "y": py, "x2": x, "y2": y, "mods": mods, "frame": frame, "t": pt})
                 else:
                     self._handle_left_click(px, py, pt, frame, mods)
-            elif button == mouse.Button.right and pressed:
+            elif button == "right" and pressed:
                 self._before_mouse_action()
                 self.emit("right_click", {"x": x, "y": y, "mods": self._mods(),
                                           "frame": self.frames.before(now), "t": now})
@@ -211,9 +208,8 @@ class InputCapture:
             pc, self._pending_click = self._pending_click, None
             self.emit("click", pc)
 
-    def _on_scroll(self, x, y, dx, dy, injected=False):
-        if injected:
-            return
+    def scroll(self, x, y, dx, dy):
+        """dy > 0 = up (pynput convention)."""
         with self._lock:
             if not self.enabled or not self.accept_point(x, y):
                 return
@@ -244,10 +240,8 @@ class InputCapture:
                 self.emit("scroll", s)
 
     # ------------------------------------------------------------ keyboard
-    def _on_press(self, key, injected=False):
-        if injected:
-            return
-        name = pynput_key_name(key)
+    def key_press(self, name: str | None, char: str | None):
+        """name: canonical key name; char: the character it types (None for non-printing keys)."""
         if name is None:
             return
         with self._lock:
@@ -259,7 +253,6 @@ class InputCapture:
                     return
             if not self.enabled or name in MODIFIERS or name in self._swallow:
                 return
-            char = getattr(key, "char", None)
             chord = [m for m in self._mods() if m != "shift"]
             altgr = set(chord) == {"ctrl", "alt"}  # AltGr on Windows = ctrl+alt (e.g. '@' on IT layout)
             if char and len(char) == 1 and char.isprintable() and (not chord or altgr):
@@ -281,12 +274,47 @@ class InputCapture:
                 combo = format_combo(set(self._mods()) | {name})
                 self.emit("key", {"combo": combo, "frame": self.frames.latest(), "t": time.monotonic()})
 
-    def _on_release(self, key, injected=False):
-        if injected:
-            return
-        name = pynput_key_name(key)
+    def key_release(self, name: str | None):
         if name is None:
             return
         with self._lock:
             self.pressed.discard(name)
             self._swallow.discard(name)
+
+
+class PynputSource:
+    """Global hooks via pynput (Windows, X11). Injected (synthetic) events are ignored."""
+
+    def __init__(self, capture: InputCapture):
+        from pynput import keyboard, mouse
+        self._mouse_mod = mouse
+        self.cap = capture
+        self._mouse = mouse.Listener(on_click=self._click, on_scroll=self._scroll)
+        self._keys = keyboard.Listener(on_press=self._press, on_release=self._release)
+
+    def start(self):
+        self._mouse.start()
+        self._keys.start()
+
+    def stop(self):
+        for listener in (self._mouse, self._keys):
+            if listener.is_alive():
+                listener.stop()
+
+    def _click(self, x, y, button, pressed, injected=False):
+        if not injected:
+            b = self._mouse_mod.Button
+            name = "left" if button == b.left else "right" if button == b.right else "other"
+            self.cap.button(x, y, name, pressed)
+
+    def _scroll(self, x, y, dx, dy, injected=False):
+        if not injected:
+            self.cap.scroll(x, y, dx, dy)
+
+    def _press(self, key, injected=False):
+        if not injected:
+            self.cap.key_press(pynput_key_name(key), getattr(key, "char", None))
+
+    def _release(self, key, injected=False):
+        if not injected:
+            self.cap.key_release(pynput_key_name(key))

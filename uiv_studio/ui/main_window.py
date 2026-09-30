@@ -159,6 +159,14 @@ class MainWindow(QMainWindow):
     def new_recording(self):
         if self.session:
             return
+        from uiv_studio import platform as backend
+        if backend.kind() == "gnome-wayland":
+            from uiv_studio.platform.evdev import NoInputAccess, check_access
+            try:
+                check_access()
+            except NoInputAccess:
+                QMessageBox.warning(self, tr("rec.no_input_title"), tr("home.no_input"))
+                return
         d = NewRecordingDialog(self.settings.data, self)
         if d.exec() != NewRecordingDialog.Accepted:
             return

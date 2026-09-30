@@ -4,13 +4,22 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from uiv_studio.core.screens import wayland_session
+from uiv_studio import platform as backend
 from uiv_studio.core.storage import list_recordings, list_runs
 from uiv_studio.ui import icons
 from uiv_studio.ui.i18n import tr
 from uiv_studio.ui.pages.common import GradientTitle, Page, fmt_date
 from uiv_studio.ui.theme import C, STATUS_COLORS
 from uiv_studio.ui.widgets import ActionTile, Badge, EmptyState, HoverCard, StatCard, fade_in, label
+
+
+def _input_ok() -> bool:
+    from uiv_studio.platform.evdev import NoInputAccess, check_access
+    try:
+        check_access()
+        return True
+    except NoInputAccess:
+        return False
 
 
 class RunRow(HoverCard):
@@ -50,8 +59,14 @@ class HomePage(Page):
         b = self.body
         b.setSpacing(22)
 
-        if wayland_session():
-            warn = label("⚠  " + tr("home.wayland"), wrap=True)
+        banner = None
+        if not backend.supported():
+            banner = tr("home.wayland")
+        elif backend.kind() == "gnome-wayland" and not _input_ok():
+            banner = tr("home.no_input")
+        if banner:
+            warn = label("⚠  " + banner, wrap=True)
+            warn.setTextInteractionFlags(Qt.TextSelectableByMouse)
             warn.setStyleSheet(f"background: {C['warning_dim']}; color: {C['warning']}; border-radius: 10px; padding: 12px 14px;")
             b.addWidget(warn)
 

@@ -1,0 +1,31 @@
+# @author 4Kumiho
+# Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
+
+# Real GNOME Wayland (headless mutter + PipeWire) end-to-end test:
+# record through virtual evdev devices, replay through Mutter RemoteDesktop, check the target app.
+name: wayland-e2e
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+jobs:
+  gnome-wayland:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo modprobe uinput
+      - run: docker build -t uiv-wayland -f tests/wayland/Dockerfile .
+      - name: Record + replay on GNOME Wayland
+        run: docker run --rm --privileged -v "$PWD":/src uiv-wayland bash tests/wayland/session.sh python tests/wayland/e2e_wayland.py
+      - name: UI starts on Wayland
+        run: |
+          mkdir -p build
+          docker run --rm -v "$PWD":/src uiv-wayland bash tests/wayland/session.sh python tests/wayland/gui_shot.py wayland /src/build/gui_wayland.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wayland-screenshots
+          path: build/*.png

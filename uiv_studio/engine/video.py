@@ -9,7 +9,8 @@ import time
 
 import cv2
 
-from uiv_studio.core.screens import Monitor, ScreenGrabber
+from uiv_studio.core.screens import Monitor
+from uiv_studio import platform as backend
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class VideoRecorder:
             self._thread.join(timeout=5)
 
     def _loop(self):
-        grabber = ScreenGrabber(self.monitor)
+        grabber = backend.make_grabber(self.monitor)
         w, h = self.monitor.width, self.monitor.height
         scale = min(1.0, MAX_WIDTH / w)
         size = (int(w * scale) // 2 * 2, int(h * scale) // 2 * 2)
