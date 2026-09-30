@@ -19,6 +19,10 @@ datas += collect_data_files("rapidocr_onnxruntime")          # PP-OCR models + c
 hidden = collect_submodules("pynput") + collect_submodules("rapidocr_onnxruntime")
 if sys.platform.startswith("linux"):
     hidden += collect_submodules("Xlib") + collect_submodules("jeepney")
+    # collect_submodules() silently drops modules whose import fails at build time
+    # (no X display in the build container): list pynput's Linux backends explicitly
+    hidden += ["pynput.keyboard._xorg", "pynput.mouse._xorg", "pynput._util.xorg", "pynput._util.xorg_keysyms",
+               "pynput.keyboard._uinput", "pynput._util.uinput", "pynput.keyboard._dummy", "pynput.mouse._dummy"]
 
 # Qt modules we never use: keeps the bundle small
 excludes = [

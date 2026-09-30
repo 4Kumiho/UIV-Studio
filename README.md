@@ -25,7 +25,9 @@ consegna un report con punteggi, confronto atteso/trovato e video dell'esecuzion
 
 ## Indice
 
-- [Avvio in 10 secondi](#-avvio-in-10-secondi)
+- [Installazione](#-installazione)
+  - [Windows](#-windows)
+  - [Linux](#-linux)
 - [Come si usa](#-come-si-usa)
 - [Impostazioni](#%EF%B8%8F-impostazioni)
 - [Come funziona la validazione](#-come-funziona-la-validazione)
@@ -35,42 +37,156 @@ consegna un report con punteggi, confronto atteso/trovato e video dell'esecuzion
 
 ---
 
-## 🚀 Avvio in 10 secondi
+## 📦 Installazione
 
-1. Scarica la repo (**Code → Download ZIP**) oppure clonala:
-   ```bash
-   git clone https://github.com/4Kumiho/UIV-Studio.git
-   ```
-2. Nella cartella avvia l'installer:
-   - **Windows:** doppio click su **`Installa UIV Studio.exe`**
-   - **Linux:** `sh installa-uiv-studio.sh`
-3. L'installer scarica l'ultima versione con una barra di avanzamento e crea **`UIV Studio.exe`**
-   (Linux: `UIV Studio`) nella stessa cartella, poi la apre.
-4. Da quel momento apri l'app con **`UIV Studio.exe`**. Al suo primo avvio l'app si prepara per ~20 secondi,
-   poi parte sempre subito.
+Non serve installare Python né nient'altro. Ti serve solo **internet** per il primo download (circa 100–190 MB).
+Scegli il tuo sistema:
 
-Per **aggiornare** usa il pulsante **Verifica aggiornamenti** nella barra laterale dell'app (all'avvio l'app
-controlla da sola e ti avvisa), oppure rilancia l'installer. Non serve installare Python né altro: serve internet solo
-per il download. I file interni dell'app vanno in una cartella nascosta `.uivstudio`.
+- [🪟 Windows](#-windows)
+- [🐧 Linux](#-linux)
+- [🔄 Aggiornare UIV Studio](#-aggiornare-uiv-studio)
+- [🧹 Disinstallare](#-disinstallare)
+- [🆘 Se qualcosa non va](#-se-qualcosa-non-va)
 
-### 🐧 Linux: X11 e GNOME Wayland
+### 🪟 Windows
 
-| Sessione | Registrazione | Esecuzione | Note |
-|---|---|---|---|
-| **GNOME su Wayland** (Ubuntu, Fedora, Debian) | ✅ | ✅ | una tantum: `sudo usermod -aG input $USER`, poi esci e rientra |
-| **X11 / Xorg** (qualsiasi desktop) | ✅ | ✅ | nessuna configurazione |
-| Altri compositor Wayland (KDE, Sway…) | ❌ | ❌ | usa una sessione X11 |
+Funziona su **Windows 10 e Windows 11** (64 bit).
+
+**1. Scarica UIV Studio**
+
+- Apri la pagina **https://github.com/4Kumiho/UIV-Studio**
+- Clicca il pulsante verde **`<> Code`**, poi **`Download ZIP`**.
+- Apri la cartella **Download**, fai **clic destro** sul file `UIV-Studio-main.zip` → **Estrai tutto…** → **Estrai**.
+- Sposta la cartella estratta dove preferisci (per esempio sul Desktop o in `Documenti`).
+
+> Sai usare git? Allora basta: `git clone https://github.com/4Kumiho/UIV-Studio.git`
+
+**2. Installa**
+
+- Apri la cartella e fai **doppio clic** su **`Installa UIV Studio.exe`** (l'icona viola/azzurra).
+- Se compare la finestra blu **“Windows ha protetto il PC”**: clicca **Ulteriori informazioni** → **Esegui comunque**.
+  Succede con tutti i programmi nuovi non firmati, è normale.
+- Una finestra mostra il download con la barra di avanzamento. Aspetta che finisca: al termine nella cartella
+  compare **`UIV Studio.exe`** e l'app si apre da sola.
+
+**3. Primo avvio**
+
+- La prima volta compare **“Preparazione di UIV Studio – Installazione in corso (solo al primo avvio)”**: aspetta circa
+  **20 secondi**. Dalla volta dopo l'app si apre subito.
+- Si apre una breve guida con i tre passi fondamentali: leggila e clicca **Inizia**.
+
+**4. Da ora in poi**
+
+- Per aprire l'app fai **doppio clic su `UIV Studio.exe`** (non serve più l'installer).
+- Comodo: clic destro su `UIV Studio.exe` → **Mostra altre opzioni** → **Invia a** → **Desktop (crea collegamento)**.
+
+> ℹ️ Nella cartella compare solo `UIV Studio.exe`: i file interni dell'app stanno nella cartella nascosta `.uivstudio`
+> accanto a lui. **Non cancellarla**: se lo fai, al prossimo avvio l'app si reinstalla da sola (20 secondi).
+
+### 🐧 Linux
+
+Funziona su tutte le distribuzioni recenti a 64 bit: **Ubuntu 20.04 o successive, Debian 11+, Fedora, Rocky/RHEL 9,
+openSUSE, Linux Mint, Arch**…
+
+**Quale sessione stai usando?** Apri il **Terminale** (`Ctrl + Alt + T`) e scrivi:
+
+```bash
+echo $XDG_SESSION_TYPE
+```
+
+| Risposta | Desktop | UIV Studio |
+|---|---|---|
+| `x11` | qualsiasi | ✅ funziona subito |
+| `wayland` | **GNOME** (Ubuntu, Fedora, Debian standard) | ✅ funziona, serve il **passo 3** una volta sola |
+| `wayland` | KDE, Sway, Hyprland… | ❌ al login scegli una sessione **X11 / Xorg** |
+
+**1. Scarica UIV Studio**
+
+Nel terminale, copia e incolla una riga alla volta (poi premi `Invio`):
+
+```bash
+cd ~
+git clone https://github.com/4Kumiho/UIV-Studio.git
+cd UIV-Studio
+```
+
+> Non hai `git`? Scarica lo ZIP dalla pagina GitHub (**`<> Code`** → **`Download ZIP`**), fai doppio clic per
+> estrarlo, poi nel terminale entra nella cartella: `cd ~/Scaricati/UIV-Studio-main` (oppure `~/Downloads/...`).
+
+**2. Installa**
+
+```bash
+sh installa-uiv-studio.sh
+```
+
+Lo script scarica l'ultima versione (vedi la barra di avanzamento), crea il file **`UIV Studio`** nella cartella e
+apre l'app. La prima volta l'app si prepara per circa **20 secondi**.
+
+**3. Solo per GNOME su Wayland (una volta sola)**
+
+Per registrare su Wayland UIV Studio deve leggere mouse e tastiera. Esegui:
+
+```bash
+sudo usermod -aG input $USER
+```
+
+Ti chiede la tua password (mentre la scrivi non vedi nulla: è normale), poi **esci dalla sessione e rientra**
+(o riavvia il PC). Se lo dimentichi, UIV Studio te lo ricorda con un avviso nella Home.
+
+**4. Da ora in poi**
+
+Per aprire l'app: doppio clic su **`UIV Studio`** nella cartella, oppure dal terminale:
+
+```bash
+cd ~/UIV-Studio && ./"UIV Studio"
+```
+
+> ℹ️ I file interni dell'app stanno nella cartella nascosta `.uivstudio` accanto all'eseguibile
+> (per vederla nel file manager: `Ctrl + H`). Non cancellarla.
+
+<details>
+<summary><b>Perché su GNOME Wayland serve il gruppo <code>input</code>?</b></summary>
 
 Su Wayland ogni app è isolata, quindi UIV Studio usa i servizi ufficiali di GNOME:
 - **schermo** → *Mutter ScreenCast* via **PipeWire**
 - **click, tasti e scroll** → *Mutter RemoteDesktop*
-- **registrazione** → lettura diretta di mouse, tastiera e touchpad da `/dev/input`, per questo serve il gruppo `input`.
+- **registrazione** → lettura diretta di mouse, tastiera e touchpad da `/dev/input` (da qui il gruppo `input`).
   Durante la registrazione UIV Studio gestisce lui il puntatore, così conosce la posizione esatta di ogni click;
   l'accelerazione del mouse può sembrare leggermente diversa.
 
 Il layout della tastiera (per esempio italiano, con “@” e lettere accentate) viene letto dalle impostazioni di GNOME.
-Tutto questo è verificato da un test automatico su GNOME Wayland vero a ogni modifica
-([`tests/wayland`](tests/wayland)).
+Tutto questo è verificato da un test automatico su GNOME Wayland vero a ogni modifica ([`tests/wayland`](tests/wayland)).
+</details>
+
+### 🔄 Aggiornare UIV Studio
+
+- Nell'app, in basso nella barra laterale, clicca **Aggiornamenti** → **Aggiorna ora**. L'app scarica la nuova versione,
+  si chiude e si riapre aggiornata.
+- All'avvio l'app controlla da sola: se c'è una novità vedi un avviso e il pulsante diventa **Nuova versione!**
+- In alternativa rilancia l'installer (`Installa UIV Studio.exe` o `sh installa-uiv-studio.sh`).
+
+Le tue registrazioni ed esecuzioni **non vengono toccate** dagli aggiornamenti.
+
+### 🧹 Disinstallare
+
+Cancella la cartella di UIV Studio (con dentro l'eseguibile e la cartella nascosta `.uivstudio`). Le tue registrazioni
+restano nella cartella **`Documenti/UIV Studio`**: cancellala solo se non ti servono più.
+
+### 🆘 Se qualcosa non va
+
+| Problema | Soluzione |
+|---|---|
+| Windows: “Windows ha protetto il PC” | **Ulteriori informazioni** → **Esegui comunque** |
+| L'installer dice **“Download non riuscito”** | controlla la connessione a internet (o il proxy aziendale) e riprova |
+| Linux: `Permission denied` su `UIV Studio` | nel terminale: `chmod +x "UIV Studio"` |
+| Linux: avviso **“Per registrare su Wayland…”** | fai il **passo 3** e poi esci/rientra dalla sessione |
+| Linux: su KDE/Sway non registra | al login scegli una sessione **X11 / Xorg** |
+| L'app non si apre più | cancella la cartella nascosta `.uivstudio` e riapri: si reinstalla in 20 secondi |
+
+I log dell'app (utili se chiedi aiuto) sono in `%APPDATA%\UIV Studio\logs` su Windows e `~/.config/uiv-studio/logs`
+su Linux.
+
+---
 
 Al primo avvio una breve guida spiega i tre passi fondamentali:
 

@@ -27,6 +27,7 @@ Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 &
 export DISPLAY=:99
 sleep 2
 mkdir -p /home/user/UIV && cp /src/installa-uiv-studio.sh /home/user/UIV/ && cd /home/user/UIV
+[ -f "/src/build/linux-test/UIV Studio" ] && export UIV_URL="file:///src/build/linux-test/UIV%20Studio" && echo "(testing local build)"
 if ! sh installa-uiv-studio.sh >/tmp/install.log 2>&1; then echo "RESULT FAIL: installer script"; tail -5 /tmp/install.log; exit 1; fi
 [ -x "UIV Studio" ] && echo "ok  executable downloaded ($(du -m 'UIV Studio' | cut -f1) MB)" || { echo "RESULT FAIL: no executable"; exit 1; }
 for i in $(seq 1 120); do ls .uivstudio/*/.complete >/dev/null 2>&1 && break; sleep 1; done

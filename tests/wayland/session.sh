@@ -21,7 +21,7 @@ exec dbus-run-session -- bash -c '
   # only the session-manager parts we need (no bluetooth/logind in a container)
   wireplumber -c main.conf >>/tmp/wireplumber.log 2>&1 &
   wireplumber -c policy.conf >>/tmp/wireplumber.log 2>&1 &
-  mutter --headless --wayland ${UIV_MUTTER_X11:---no-x11} --virtual-monitor ${UIV_MONITOR:-1280x800} >/tmp/mutter.log 2>&1 &
+  (G_MESSAGES_DEBUG=${UIV_MUTTER_DEBUG:-} mutter --headless --wayland ${UIV_MUTTER_X11:---no-x11} --virtual-monitor ${UIV_MONITOR:-1280x800}; echo "mutter exited with code $?") >/tmp/mutter.log 2>&1 &
   for i in $(seq 1 100); do [ -S "$XDG_RUNTIME_DIR/wayland-0" ] && break; sleep 0.1; done
   export WAYLAND_DISPLAY=wayland-0
   "$@"
