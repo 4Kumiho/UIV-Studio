@@ -1,7 +1,7 @@
 # @author 4Kumiho
 # Copyright (c) 2026 4Kumiho. All rights reserved. See LICENSE.
 
-"""GNOME on Wayland: screen frames and input injection through Mutter's D-Bus APIs.
+"""Wayland: screen frames and input injection through Mutter's D-Bus APIs.
 
 Mutter (the GNOME Shell compositor) exposes the same services GNOME Remote Desktop
 uses: org.gnome.Mutter.ScreenCast (monitor video via PipeWire) and
@@ -11,6 +11,7 @@ app lifetime; frames are pulled from PipeWire with a gst-launch subprocess.
 """
 
 import logging
+import os
 import shutil
 import subprocess
 import threading
@@ -155,6 +156,10 @@ class MutterSession:
         log.info("Mutter session: monitor %s, PipeWire node %s, %sx%s", connector, self.node_id,
                  self.width, self.height)
 
+    def pipewire_source(self):
+        """(pipewiresrc properties, fds to hand to the gst process)."""
+        return [f"path={self.node_id}"], ()
+
     # ------------------------------------------------------------ input
     def _call(self, member, sig, args):
         with self._io:
@@ -195,6 +200,15 @@ class MutterSession:
         self.conn.close()
 
 
+def session_for(monitor: Monitor):
+    """Input/stream session of a monitor: xdg-desktop-portal, or Mutter's own API."""
+    from uiv_studio import platform as backend
+    if backend.kind() == "wayland":
+        from uiv_studio.platform.portal import PortalSession
+        return PortalSession.for_monitor(monitor)
+    return MutterSession.for_monitor(monitor)
+
+
 # ================================================================== frames
 
 
@@ -222,15 +236,18 @@ class PipeWireGrabber:
         if not shutil.which("gst-launch-1.0"):
             raise GnomeError("gst-launch-1.0 not found: install GStreamer (gstreamer1.0-tools, gstreamer1.0-pipewire)")
         self.monitor = monitor
-        self.session = MutterSession.for_monitor(monitor)
+        self.session = session_for(monitor)
         self.w, self.h = self.session.width, self.session.height
         self._frame = None
         self._cond = threading.Condition()
+        src, fds = self.session.pipewire_source()
         self._proc = subprocess.Popen(
-            ["gst-launch-1.0", "-q", "pipewiresrc", f"path={self.session.node_id}", "always-copy=true",
+            ["gst-launch-1.0", "-q", "pipewiresrc", *src, "always-copy=true",
              "!", "videoconvert", "!", "videoscale", "!",
              f"video/x-raw,format=BGR,width={self.w},height={self.h}", "!", "fdsink", "fd=1", "sync=false"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0)
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0, pass_fds=fds)
+        for fd in fds:
+            os.close(fd)  # the gst process owns its copy
         self._thread = threading.Thread(target=self._pump, name="pipewire", daemon=True)
         self._thread.start()
 
@@ -274,7 +291,7 @@ class MutterActuator:
         self.xkb = xkb
         self.cfg = cfg_execution
         self.monitor = monitor
-        self.s = MutterSession.for_monitor(monitor)
+        self.s = session_for(monitor)
         self.pos = (self.s.width / 2, self.s.height / 2)
 
     def _local(self, x, y):

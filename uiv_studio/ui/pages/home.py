@@ -62,7 +62,7 @@ class HomePage(Page):
         banner = None
         if not backend.supported():
             banner = tr("home.wayland")
-        elif backend.kind() == "gnome-wayland" and not _input_ok():
+        elif backend.needs_input_group() and not _input_ok():
             banner = tr("home.no_input")
         if banner:
             warn = label("⚠  " + banner, wrap=True)

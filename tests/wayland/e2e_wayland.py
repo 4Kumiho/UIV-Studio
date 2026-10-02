@@ -129,13 +129,13 @@ def main():
     gnome.available(wait=30)          # slow CI machines: give mutter time to register its services
     backend.kind.cache_clear()
     print("backend:", backend.kind())
-    if backend.kind() != "gnome-wayland":
+    if not backend.needs_input_group():
         for f in ("/tmp/mutter.log", "/tmp/pipewire.log", "/tmp/wireplumber.log"):
             print(f"----- {f}"); print(open(f).read()[-2500:])
         print(subprocess.run("pgrep -a 'pipewire|wireplumber|mutter'; dbus-send --session --print-reply "
                              "--dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.ListNames",
                              shell=True, capture_output=True, text=True).stdout[-2500:])
-    assert backend.kind() == "gnome-wayland"
+    assert backend.needs_input_group(), backend.kind()
     monitor = backend.list_monitors()[0]
     ws = Path(tempfile.mkdtemp(prefix="uiv_wl_"))
 

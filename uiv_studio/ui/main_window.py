@@ -160,7 +160,7 @@ class MainWindow(QMainWindow):
         if self.session:
             return
         from uiv_studio import platform as backend
-        if backend.kind() == "gnome-wayland":
+        if backend.needs_input_group():
             from uiv_studio.platform.evdev import NoInputAccess, check_access
             try:
                 check_access()

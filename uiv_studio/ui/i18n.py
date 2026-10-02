@@ -50,8 +50,10 @@ T = {
     "home.stat_pass": ("Tasso di successo", "Pass rate"),
     "home.recent_runs": ("Esecuzioni recenti", "Recent runs"),
     "home.no_runs": ("Nessuna esecuzione. Avvia il tuo primo test!", "No runs yet. Start your first test!"),
-    "home.wayland": ("Questo desktop Wayland non è supportato: usa GNOME oppure una sessione X11 (Xorg).",
-                     "This Wayland desktop is not supported: use GNOME or an X11 (Xorg) session."),
+    "home.wayland": ("Questo desktop Wayland non offre xdg-desktop-portal (desktop remoto): installa il pacchetto "
+                     "xdg-desktop-portal del tuo desktop (es. xdg-desktop-portal-gnome / -kde) oppure usa una sessione X11.",
+                     "This Wayland desktop offers no xdg-desktop-portal (remote desktop): install your desktop's "
+                     "xdg-desktop-portal package (e.g. xdg-desktop-portal-gnome / -kde) or use an X11 session."),
     "home.no_input": ("Per registrare su Wayland UIV Studio deve leggere mouse e tastiera. Esegui una volta "
                       "“sudo usermod -aG input $USER” nel terminale, poi esci e rientra nella sessione.",
                       "To record on Wayland UIV Studio needs to read mouse and keyboard. Run "

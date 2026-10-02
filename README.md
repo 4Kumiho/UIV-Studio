@@ -11,7 +11,7 @@ schermo: prima di ogni azione UIV Studio verifica che l'elemento giusto sia davv
 consegna un report con punteggi, confronto atteso/trovato e video dell'esecuzione.
 
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-X11%20%7C%20GNOME%20Wayland-FCC624?logo=linux&logoColor=black)
+![Linux](https://img.shields.io/badge/Linux-X11%20%7C%20Wayland-FCC624?logo=linux&logoColor=black)
 ![Wayland E2E](https://github.com/4Kumiho/UIV-Studio/actions/workflows/wayland-e2e.yml/badge.svg)
 ![Qt](https://img.shields.io/badge/UI-Qt%206%20(PySide6)-41CD52?logo=qt&logoColor=white)
 ![ONNX](https://img.shields.io/badge/AI-ONNX%20Runtime%20%C2%B7%20CPU-005CED)
@@ -97,8 +97,8 @@ echo $XDG_SESSION_TYPE
 | Risposta | Desktop | UIV Studio |
 |---|---|---|
 | `x11` | qualsiasi | ✅ funziona subito |
-| `wayland` | **GNOME** (Ubuntu, Fedora, Debian standard) | ✅ funziona, serve il **passo 3** una volta sola |
-| `wayland` | KDE, Sway, Hyprland… | ❌ al login scegli una sessione **X11 / Xorg** |
+| `wayland` | **GNOME**, **KDE Plasma** (Ubuntu, Fedora, Debian, Kubuntu…) | ✅ funziona, serve il **passo 3** una volta sola; al primo avvio il desktop chiede il permesso di condividere lo schermo |
+| `wayland` | Sway, Hyprland… (portal senza desktop remoto) | ❌ al login scegli una sessione **X11 / Xorg** |
 
 **1. Scarica UIV Studio**
 
@@ -122,7 +122,7 @@ sh installa-uiv-studio.sh
 Lo script scarica l'ultima versione (vedi la barra di avanzamento), crea il file **`UIV Studio`** nella cartella e
 apre l'app. La prima volta l'app si prepara per circa **20 secondi**.
 
-**3. Solo per GNOME su Wayland (una volta sola)**
+**3. Solo su Wayland (una volta sola)**
 
 Per registrare su Wayland UIV Studio deve leggere mouse e tastiera. Esegui:
 
@@ -145,16 +145,20 @@ cd ~/UIV-Studio && ./"UIV Studio"
 > (per vederla nel file manager: `Ctrl + H`). Non cancellarla.
 
 <details>
-<summary><b>Perché su GNOME Wayland serve il gruppo <code>input</code>?</b></summary>
+<summary><b>Perché su Wayland serve il gruppo <code>input</code>?</b></summary>
 
-Su Wayland ogni app è isolata, quindi UIV Studio usa i servizi ufficiali di GNOME:
-- **schermo** → *Mutter ScreenCast* via **PipeWire**
-- **click, tasti e scroll** → *Mutter RemoteDesktop*
+Su Wayland ogni app è isolata, quindi UIV Studio usa il servizio standard **xdg-desktop-portal** (D-Bus), lo stesso del
+desktop remoto. Viene attivato solo se c'è la variabile `WAYLAND_DISPLAY` (impostata in automatico al login); senza,
+UIV Studio usa X11 come sempre.
+- **schermo** → portal *ScreenCast*: il desktop chiede il consenso **una volta sola** (il permesso viene ricordato) e
+  fornisce un file descriptor **PipeWire** con i pixel
+- **click, tasti e scroll** → portal *RemoteDesktop*
+- senza portal ma su GNOME, ripiega sulle API dirette di Mutter
 - **registrazione** → lettura diretta di mouse, tastiera e touchpad da `/dev/input` (da qui il gruppo `input`).
   Durante la registrazione UIV Studio gestisce lui il puntatore, così conosce la posizione esatta di ogni click;
   l'accelerazione del mouse può sembrare leggermente diversa.
 
-Il layout della tastiera (per esempio italiano, con “@” e lettere accentate) viene letto dalle impostazioni di GNOME.
+Il layout della tastiera (per esempio italiano, con “@” e lettere accentate) viene letto dalle impostazioni del desktop.
 Tutto questo è verificato da un test automatico su GNOME Wayland vero a ogni modifica ([`tests/wayland`](tests/wayland)).
 </details>
 
@@ -180,7 +184,7 @@ restano nella cartella **`Documenti/UIV Studio`**: cancellala solo se non ti ser
 | L'installer dice **“Download non riuscito”** | controlla la connessione a internet (o il proxy aziendale) e riprova |
 | Linux: `Permission denied` su `UIV Studio` | nel terminale: `chmod +x "UIV Studio"` |
 | Linux: avviso **“Per registrare su Wayland…”** | fai il **passo 3** e poi esci/rientra dalla sessione |
-| Linux: su KDE/Sway non registra | al login scegli una sessione **X11 / Xorg** |
+| Linux: su Sway/Hyprland non registra | al login scegli una sessione **X11 / Xorg** |
 | L'app non si apre più | cancella la cartella nascosta `.uivstudio` e riapri: si reinstalla in 20 secondi |
 
 I log dell'app (utili se chiedi aiuto) sono in `%APPDATA%\UIV Studio\logs` su Windows e `~/.config/uiv-studio/logs`

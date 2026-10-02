@@ -5,9 +5,10 @@
 mouse and listen to the user on each system.
 
     windows        mss + pynput
-    x11            mss + pynput (Xlib)
-    gnome-wayland  Mutter ScreenCast (PipeWire) + Mutter RemoteDesktop + /dev/input
-    wayland        other compositors: unsupported (clear message in the UI)
+    x11            mss + pynput (Xlib)                    no WAYLAND_DISPLAY
+    wayland        xdg-desktop-portal ScreenCast (PipeWire fd) + RemoteDesktop + /dev/input
+    gnome-wayland  fallback without a portal: Mutter's own ScreenCast/RemoteDesktop + /dev/input
+    wayland-unsupported  neither available (clear message in the UI)
 """
 
 import os
@@ -22,22 +23,31 @@ def kind() -> str:
         return forced
     if sys.platform == "win32":
         return "windows"
-    if os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland" or (
-            os.environ.get("WAYLAND_DISPLAY") and not os.environ.get("DISPLAY")):
-        from uiv_studio.platform import gnome
-        return "gnome-wayland" if gnome.available() else "wayland"
+    if os.environ.get("WAYLAND_DISPLAY"):
+        from uiv_studio.platform import gnome, portal
+        if portal.available():
+            return "wayland"
+        return "gnome-wayland" if gnome.available() else "wayland-unsupported"
     return "x11"
 
 
 def is_wayland() -> bool:
-    return kind() in ("gnome-wayland", "wayland")
+    return kind() in ("wayland", "gnome-wayland", "wayland-unsupported")
 
 
 def supported() -> bool:
-    return kind() != "wayland"
+    return kind() != "wayland-unsupported"
+
+
+def needs_input_group() -> bool:
+    """Recording reads /dev/input (Wayland never reveals global input to apps)."""
+    return kind() in ("wayland", "gnome-wayland")
 
 
 def list_monitors():
+    if kind() == "wayland":
+        from uiv_studio.platform import portal
+        return portal.list_monitors()
     if kind() == "gnome-wayland":
         from uiv_studio.platform import gnome
         return gnome.list_monitors()
@@ -47,7 +57,7 @@ def list_monitors():
 
 def make_grabber(monitor):
     """Object with grab() -> BGR ndarray of the monitor, and close()."""
-    if kind() == "gnome-wayland":
+    if needs_input_group():
         from uiv_studio.platform.gnome import PipeWireGrabber
         return PipeWireGrabber.shared(monitor)
     from uiv_studio.core.screens import ScreenGrabber
@@ -55,7 +65,7 @@ def make_grabber(monitor):
 
 
 def make_actuator(cfg_execution: dict, monitor):
-    if kind() == "gnome-wayland":
+    if needs_input_group():
         from uiv_studio.platform.gnome import MutterActuator
         return MutterActuator(cfg_execution, monitor)
     from uiv_studio.engine.actions import Actuator
@@ -64,16 +74,16 @@ def make_actuator(cfg_execution: dict, monitor):
 
 def make_input_source(capture, monitor):
     """Raw input feeding engine.capture.InputCapture while recording (None = default pynput)."""
-    if kind() == "gnome-wayland":
+    if needs_input_group():
         from uiv_studio.platform.evdev import EvdevSource
-        from uiv_studio.platform.gnome import MutterSession
-        return EvdevSource(capture, monitor, MutterSession.for_monitor(monitor))
+        from uiv_studio.platform.gnome import session_for
+        return EvdevSource(capture, monitor, session_for(monitor))
     return None
 
 
 def make_hotkey_listener(combo: frozenset, callback):
     """Global hotkey watcher used during runs: object with start()/stop()."""
-    if kind() == "gnome-wayland":
+    if needs_input_group():
         from uiv_studio.platform.evdev import EvdevHotkeys
         return EvdevHotkeys(combo, callback)
     return _PynputHotkeys(combo, callback)
