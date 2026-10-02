@@ -170,6 +170,19 @@ def launch(app_dir: Path, launcher: Path):
 
 
 def run_with_window(work):
+    started = []
+    try:
+        _window(lambda progress: (started.append(1), work(progress)))
+    except SystemExit:
+        raise
+    except Exception as e:  # no display, missing X libraries or fonts: install without the window
+        if started:
+            raise
+        print(f"{APP_NAME}: preparing (no progress window: {e})", file=sys.stderr)
+        work(lambda *a, **k: None)
+
+
+def _window(work):
     import tkinter as tk
 
     t = TEXT[_lang()]

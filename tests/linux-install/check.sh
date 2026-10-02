@@ -7,14 +7,14 @@
 set -u
 . /etc/os-release
 echo "=== $PRETTY_NAME (glibc $(ldd --version 2>&1 | head -1 | grep -oE '[0-9]+\.[0-9]+$'))"
-case "$ID $ID_LIKE" in
+case "$ID ${ID_LIKE:-}" in
   *debian*|*ubuntu*)
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -qq >/dev/null && apt-get install -y -qq curl ca-certificates xvfb procps libgl1 libegl1 \
       libfontconfig1 libglib2.0-0 libdbus-1-3 libx11-6 libx11-xcb1 libxkbcommon0 libxkbcommon-x11-0 libxrender1 \
       libxi6 libxext6 libxtst6 libxcb-randr0 libxcb-shape0 libxcb-xfixes0 libxcb-sync1 libxcb-shm0 >/dev/null ;;
   *fedora*|*rhel*|*centos*)
-    dnf -y -q install curl xorg-x11-server-Xvfb procps-ng mesa-libGL mesa-libEGL fontconfig glib2 dbus-libs \
+    dnf -y -q --setopt=sslverify=False install curl xorg-x11-server-Xvfb procps-ng mesa-libGL mesa-libEGL fontconfig glib2 dbus-libs \
       libX11 libX11-xcb libxkbcommon libxkbcommon-x11 libXrender libXi libXext libXtst >/dev/null ;;
   *suse*)
     zypper -n -q install curl xvfb-run xorg-x11-server-Xvfb procps Mesa-libGL1 Mesa-libEGL1 fontconfig \
