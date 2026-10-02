@@ -21,7 +21,7 @@ import logging
 import secrets
 import threading
 
-from jeepney import DBusAddress, MatchRule, new_method_call
+from jeepney import DBusAddress, MatchRule, MessageType, new_method_call
 from jeepney.bus_messages import message_bus
 from jeepney.io.blocking import open_dbus_connection
 
@@ -50,8 +50,8 @@ def available() -> bool:
         return False
     try:
         addr = DBusAddress(PATH, BUS, "org.freedesktop.DBus.Properties")
-        conn.send_and_get_reply(new_method_call(addr, "Get", "ss", (RD, "AvailableDeviceTypes")), timeout=5)
-        return True
+        reply = conn.send_and_get_reply(new_method_call(addr, "Get", "ss", (RD, "AvailableDeviceTypes")), timeout=5)
+        return reply.header.message_type == MessageType.method_return and bool(reply.body[0][1])
     except Exception:
         return False
     finally:
@@ -81,7 +81,10 @@ def _save_token(token: str):
 
 
 def list_monitors() -> list[Monitor]:
-    """Monitors as Qt sees them (logical position, physical pixel size)."""
+    """Monitors (logical position, physical pixel size): from Mutter on GNOME, else as Qt sees them."""
+    from uiv_studio.platform import gnome
+    if gnome.available(wait=0):
+        return gnome.list_monitors()
     from PySide6.QtGui import QGuiApplication
     out = []
     for i, s in enumerate(QGuiApplication.screens(), start=1):
@@ -134,6 +137,9 @@ class _Portal:
                             timeout=CONSENT_TIMEOUT)
         if res.get("restore_token"):
             _save_token(res["restore_token"][1])
+        self.devices = int(res.get("devices", ("u", 0))[1])
+        if not self.devices & POINTER:
+            raise PortalError("the desktop did not allow remote interaction (mouse and keyboard)")
         self.streams = []    # (node_id, (x, y) logical position or None, (w, h) logical size or None)
         for node, props in res.get("streams", ("", []))[1]:
             pos = props.get("position", (None, None))[1]
@@ -156,7 +162,9 @@ class _Portal:
         c = self.conn
         c.send_and_get_reply(message_bus.AddMatch(rule), timeout=5)
         with c.filter(rule) as queue:
-            c.send_and_get_reply(new_method_call(addr, member, sig, make_args(token)), timeout=10)
+            reply = c.send_and_get_reply(new_method_call(addr, member, sig, make_args(token)), timeout=10)
+            if reply.header.message_type != MessageType.method_return:
+                raise PortalError(f"{member}: {reply.body}")
             msg = c.recv_until_filtered(queue, timeout=timeout)
         code, results = msg.body
         if code != 0:
@@ -180,8 +188,10 @@ class _Portal:
 
     def notify(self, member, sig, args):
         with self._io:
-            self.conn.send_and_get_reply(new_method_call(self.rd, member, "oa{sv}" + sig, (self.session, {}, *args)),
-                                         timeout=5)
+            reply = self.conn.send_and_get_reply(
+                new_method_call(self.rd, member, "oa{sv}" + sig, (self.session, {}, *args)), timeout=5)
+        if reply.header.message_type != MessageType.method_return:
+            raise PortalError(f"{member}: {reply.body}")
 
 
 class PortalSession:

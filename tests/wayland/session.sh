@@ -23,6 +23,12 @@ exec dbus-run-session -- bash -c '
   wireplumber -c policy.conf >>/tmp/wireplumber.log 2>&1 &
   (G_MESSAGES_DEBUG=${UIV_MUTTER_DEBUG:-} mutter --headless --wayland ${UIV_MUTTER_X11:---no-x11} --virtual-monitor ${UIV_MONITOR:-1280x800}; echo "mutter exited with code $?") >/tmp/mutter.log 2>&1 &
   for i in $(seq 1 100); do [ -S "$XDG_RUNTIME_DIR/wayland-0" ] && break; sleep 0.1; done
-  export WAYLAND_DISPLAY=wayland-0
+  export WAYLAND_DISPLAY=wayland-0 GTK_A11Y=none
+  # xdg-desktop-portal (if installed): its GNOME backend draws the consent dialog on this display
+  dbus-update-activation-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE GTK_A11Y
+  if [ -x /usr/libexec/xdg-desktop-portal ]; then
+    /usr/libexec/xdg-desktop-portal >/tmp/xdp.log 2>&1 &
+    sleep 2
+  fi
   "$@"
 ' bash "$@"

@@ -122,6 +122,46 @@ def play(ws: Path, rec_path: Path, monitor):
     return out[0][1], steps, info, Path(out[0][0]).parent
 
 
+def accept_portal_consent(monitor):
+    """Open the xdg-desktop-portal session and play the user: in GNOME's "Remote Desktop"
+    dialog enable "Allow Remote Interaction" and press "Share" (clicked through
+    Mutter's own API, independent from the portal session being approved)."""
+    import threading
+    from uiv_studio.platform import gnome, portal
+    result = {}
+
+    def start():
+        try:
+            result["portal"] = portal._Portal.get()
+        except Exception as e:
+            result["error"] = e
+
+    t = threading.Thread(target=start, daemon=True)
+    t.start()
+    hand = gnome.MutterSession(monitor)
+    time.sleep(4)                                  # dialog appears
+    import cv2
+    real, gnome.session_for = gnome.session_for, lambda m: hand
+    eye = gnome.PipeWireGrabber(monitor)
+    gnome.session_for = real
+    w, h = hand.width, hand.height
+    # focus the dialog, enable "Allow Remote Interaction", press "Share"
+    for i, (x, y) in enumerate(((w / 2, h / 2 + 230), (w / 2 + 257, h / 2 - 93), (w / 2 + 282, h / 2 - 227))):
+        for dx in (-6, 0):                        # GTK wants a real motion before the press
+            hand.pointer_to(x + dx, y)
+            time.sleep(0.15)
+        hand.button("left", True)
+        time.sleep(0.08)
+        hand.button("left", False)
+        time.sleep(0.8)
+        cv2.imwrite(f"/src/build/consent_{i}.png", eye.grab())
+    t.join(30)
+    eye._proc.kill()
+    hand.close()
+    assert "portal" in result, result.get("error", "portal consent not given")
+    print("portal session:", result["portal"].streams)
+
+
 def main():
     app = QCoreApplication(sys.argv)
     t0 = time.time()
@@ -137,7 +177,9 @@ def main():
                              shell=True, capture_output=True, text=True).stdout[-2500:])
     assert backend.needs_input_group(), backend.kind()
     monitor = backend.list_monitors()[0]
-    ws = Path(tempfile.mkdtemp(prefix="uiv_wl_"))
+    if backend.kind() == "wayland":
+        accept_portal_consent(monitor)
+    ws =Path(tempfile.mkdtemp(prefix="uiv_wl_"))
 
     target, geo = start_target(0)
     rec_path = record(ws, monitor, geo)
