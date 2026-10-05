@@ -43,8 +43,17 @@ def start_target(offset=0):
     return p, json.load(open("/tmp/target_geometry.json"))
 
 
-def center(r):
-    return r[0] + r[2] // 2, r[1] + r[3] // 2
+def center(r, monitor=None, glob=False):
+    """Centre of a widget rect, in the space the recorder expects.
+
+    The target app reports logical pixels; the recorder works in physical frame
+    pixels (scale 2.0 -> a 1920x1080 logical window on a 3840x2160 frame).
+    `glob` adds the monitor origin, the convention EvdevSource._global() feeds to
+    InputCapture; without it the result is frame-local, as VirtualInput wants."""
+    scale = monitor.scale if monitor else 1.0
+    x = round((r[0] + r[2] / 2) * scale)
+    y = round((r[1] + r[3] / 2) * scale)
+    return (x + monitor.left, y + monitor.top) if glob else (x, y)
 
 
 def record(ws: Path, monitor, geo) -> Path:
@@ -71,20 +80,20 @@ def record(ws: Path, monitor, geo) -> Path:
             time.sleep(1.0)
             src = r.capture.source
             for name in ("Login", "Settings"):
-                vi.move_to(src, *center(geo[name]))
+                vi.move_to(src, *center(geo[name], monitor))
                 vi.click()
                 time.sleep(0.9)
-            vi.move_to(src, *center(geo["edit"]))
+            vi.move_to(src, *center(geo["edit"], monitor))
             vi.click()
             time.sleep(0.9)
             vi.type("hello wayland\n")
             time.sleep(1.0)
     else:
         for name in ("Login", "Settings"):
-            x, y = center(geo[name])
+            x, y = center(geo[name], monitor, glob=True)
             cap.button(x, y, "left", True); cap.button(x, y, "left", False)
             time.sleep(0.9)
-        x, y = center(geo["edit"])
+        x, y = center(geo["edit"], monitor, glob=True)
         cap.button(x, y, "left", True); cap.button(x, y, "left", False)
         time.sleep(0.9)
         for ch in "hello wayland":

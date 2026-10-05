@@ -77,7 +77,7 @@ def make_input_source(capture, monitor):
     if needs_input_group():
         from uiv_studio.platform.evdev import EvdevSource
         from uiv_studio.platform.gnome import session_for
-        return EvdevSource(capture, monitor, session_for(monitor))
+        return EvdevSource(capture, monitor, session_for(monitor, input_only=True))
     return None
 
 

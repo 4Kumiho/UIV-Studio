@@ -147,7 +147,12 @@ class MutterSession:
         self.node_id = int(msg.body[0])
         params = _props(c, self.stream_path, SC, SC + ".Stream", "Parameters")
         size = params.get("size", ("(ii)", (monitor.width, monitor.height)))[1]
-        self.width, self.height = int(size[0]), int(size[1])
+        self.stream_w, self.stream_h = int(size[0]), int(size[1])
+        # Everything else works in the monitor's physical pixels. On a scaled
+        # monitor Mutter reports the stream in logical units but takes absolute
+        # input in physical ones, so clamping to what it reports would put every
+        # point past the left/top half of a HiDPI screen out of reach.
+        self.width, self.height = monitor.width, monitor.height
         self.alive = True
         # Mutter creates its virtual keyboard lazily and drops that first event:
         # prime it with a neutral key so the first real character is not lost.
@@ -200,10 +205,21 @@ class MutterSession:
         self.conn.close()
 
 
-def session_for(monitor: Monitor):
-    """Input/stream session of a monitor: xdg-desktop-portal, or Mutter's own API."""
+def session_for(monitor: Monitor, input_only: bool = False):
+    """Input/stream session of a monitor: xdg-desktop-portal, or Mutter's own API.
+
+    GNOME's portal checks absolute input against the stream's *logical* size but
+    maps it as physical pixels, so on a scaled monitor only the top-left corner
+    (1/scale of each axis) can ever be reached. Mutter's own API takes the whole
+    physical range, so input goes through it there while frames keep coming from
+    the portal.
+    """
     from uiv_studio import platform as backend
     if backend.kind() == "wayland":
+        if input_only and monitor.scale != 1.0 and available(wait=0):
+            log.info("scaled monitor %s: injecting input through Mutter, not the portal",
+                     getattr(monitor, "connector", monitor.index))
+            return MutterSession.for_monitor(monitor)
         from uiv_studio.platform.portal import PortalSession
         return PortalSession.for_monitor(monitor)
     return MutterSession.for_monitor(monitor)
@@ -291,7 +307,7 @@ class MutterActuator:
         self.xkb = xkb
         self.cfg = cfg_execution
         self.monitor = monitor
-        self.s = session_for(monitor)
+        self.s = session_for(monitor, input_only=True)
         self.pos = (self.s.width / 2, self.s.height / 2)
 
     def _local(self, x, y):
