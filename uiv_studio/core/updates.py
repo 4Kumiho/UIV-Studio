@@ -75,7 +75,8 @@ def install_and_restart(new_file: Path, launcher: Path):
         kwargs["creationflags"] = 0x00000008 | 0x00000200
     else:
         kwargs["start_new_session"] = True
-    env = {k: v for k, v in os.environ.items() if k != "UIV_LAUNCHER"}
+    from uiv_studio.core.paths import system_env
+    env = {k: v for k, v in system_env().items() if k != "UIV_LAUNCHER"}
     subprocess.Popen([str(launcher)], env=env, **kwargs)
 
 

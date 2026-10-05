@@ -14,6 +14,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import threading
 
 import numpy as np
@@ -21,6 +22,7 @@ from jeepney import DBusAddress, MatchRule, new_method_call
 from jeepney.bus_messages import message_bus
 from jeepney.io.blocking import open_dbus_connection
 
+from uiv_studio.core.paths import system_env
 from uiv_studio.core.screens import Monitor
 
 log = logging.getLogger(__name__)
@@ -261,7 +263,8 @@ class PipeWireGrabber:
             ["gst-launch-1.0", "-q", "pipewiresrc", *src, "always-copy=true",
              "!", "videoconvert", "!", "videoscale", "!",
              f"video/x-raw,format=BGR,width={self.w},height={self.h}", "!", "fdsink", "fd=1", "sync=false"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0, pass_fds=fds)
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0, pass_fds=fds,
+            env=system_env())
         for fd in fds:
             os.close(fd)  # the gst process owns its copy
         self._thread = threading.Thread(target=self._pump, name="pipewire", daemon=True)

@@ -51,8 +51,9 @@ def gnome_layout() -> tuple[str, str]:
     if env:
         return env, os.environ.get("XKB_DEFAULT_VARIANT", "")
     try:
+        from uiv_studio.core.paths import system_env
         out = subprocess.run(["gsettings", "get", "org.gnome.desktop.input-sources", "sources"],
-                             capture_output=True, text=True, timeout=3).stdout.strip()
+                             capture_output=True, text=True, timeout=3, env=system_env()).stdout.strip()
         out = out.replace("@a(ss)", "").strip()
         for kind, value in ast.literal_eval(out or "[]"):
             if kind == "xkb":

@@ -18,6 +18,25 @@ def resource_dir() -> Path:
     return Path(__file__).resolve().parent.parent / "resources"
 
 
+def system_env() -> dict:
+    """Environment for running a tool that belongs to the system, not to us.
+
+    A frozen build runs with LD_LIBRARY_PATH pointing at its own bundled
+    libraries, so a system binary started from here loads our older glib and
+    dies on an undefined symbol: gst-launch then never produces a frame and
+    recording shows a blank screen. PyInstaller keeps the caller's original
+    value in <VAR>_ORIG.
+    """
+    env = dict(os.environ)
+    for var in ("LD_LIBRARY_PATH", "LD_PRELOAD", "LIBPATH", "DYLD_LIBRARY_PATH"):
+        original = env.pop(var + "_ORIG", None)
+        if original is not None:
+            env[var] = original
+        elif getattr(sys, "frozen", False):
+            env.pop(var, None)
+    return env
+
+
 def config_dir() -> Path:
     if sys.platform == "win32":
         root = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming")) / APP_NAME

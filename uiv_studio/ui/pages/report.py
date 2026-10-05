@@ -297,7 +297,8 @@ class ReportPage(QWidget):
         if sys.platform == "win32":
             os.startfile(folder)
         else:
-            subprocess.Popen(["xdg-open", folder])
+            from uiv_studio.core.paths import system_env
+            subprocess.Popen(["xdg-open", folder], env=system_env())
 
     def _rerun(self):
         self.app.run_recording(self.info.recording_path)
