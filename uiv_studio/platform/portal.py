@@ -42,6 +42,12 @@ class PortalError(RuntimeError):
     pass
 
 
+class StaleToken(PortalError):
+    """The saved restore token was refused: the desktop started the session but
+    silently withheld the devices (and issued no new token). Retrying once
+    without the token makes the desktop ask the user again."""
+
+
 def available() -> bool:
     """True when the desktop's portal offers RemoteDesktop (and so ScreenCast too)."""
     try:
@@ -68,6 +74,13 @@ def _load_token() -> str:
         return json.loads(_token_file().read_text()).get("restore_token", "")
     except Exception:
         return ""
+
+
+def _clear_token():
+    try:
+        _token_file().unlink(missing_ok=True)
+    except Exception:
+        log.exception("cannot drop portal restore token")
 
 
 def _save_token(token: str):
@@ -111,11 +124,17 @@ class _Portal:
     def get(cls) -> "_Portal":
         with cls._lock:
             if cls._instance is None or not cls._instance.alive:
-                cls._instance = cls()
+                try:
+                    cls._instance = cls()
+                except StaleToken as e:
+                    log.warning("portal restore token refused (%s): asking the desktop again", e)
+                    _clear_token()
+                    cls._instance = cls(use_token=False)
             return cls._instance
 
-    def __init__(self):
+    def __init__(self, use_token: bool = True):
         self.alive = False
+        self.used_token = False
         self._io = threading.Lock()
         # a private connection: the session lives as long as this connection
         self.conn = open_dbus_connection(bus="SESSION", enable_fds=True)
@@ -123,13 +142,21 @@ class _Portal:
         self.rd = DBusAddress(PATH, BUS, RD)
         self.sc = DBusAddress(PATH, BUS, SC)
 
+        try:
+            self._negotiate(use_token)
+        except BaseException:
+            self._abort()
+            raise
+
+    def _negotiate(self, use_token: bool):
         res = self._request(self.rd, "CreateSession", "a{sv}",
                             lambda t: ({"handle_token": ("s", t), "session_handle_token": ("s", "uiv" + t)},))
         self.session = res["session_handle"][1]
         opts = {"types": ("u", KEYBOARD | POINTER), "persist_mode": ("u", 2)}
-        token = _load_token()
+        token = _load_token() if use_token else ""
         if token:
             opts["restore_token"] = ("s", token)
+            self.used_token = True
         self._request(self.rd, "SelectDevices", "oa{sv}", lambda t: (self.session, {**opts, "handle_token": ("s", t)}))
         self._request(self.sc, "SelectSources", "oa{sv}", lambda t: (self.session, {
             "types": ("u", 1), "multiple": ("b", True), "cursor_mode": ("u", 1), "handle_token": ("s", t)}))
@@ -139,20 +166,36 @@ class _Portal:
             _save_token(res["restore_token"][1])
         self.devices = int(res.get("devices", ("u", 0))[1])
         if not self.devices & POINTER:
-            raise PortalError("the desktop did not allow remote interaction (mouse and keyboard)")
+            raise (StaleToken if self.used_token else PortalError)(
+                "the desktop did not allow remote interaction (mouse and keyboard)")
         self.streams = []    # (node_id, (x, y) logical position or None, (w, h) logical size or None)
         for node, props in res.get("streams", ("", []))[1]:
             pos = props.get("position", (None, None))[1]
             size = props.get("size", (None, None))[1]
             self.streams.append((int(node), tuple(pos) if pos else None, tuple(size) if size else None))
         if not self.streams:
-            raise PortalError("the desktop shared no screen")
+            raise (StaleToken if self.used_token else PortalError)("the desktop shared no screen")
         self.alive = True
         # GNOME creates its virtual keyboard lazily and drops that first event:
         # prime it with a neutral key so the first real character is not lost.
         for pressed in (1, 0):
             self.notify("NotifyKeyboardKeysym", "iu", (0xFFE1, pressed))  # Shift_L
         log.info("portal session %s: streams %s", self.session, self.streams)
+
+    def _abort(self):
+        """Close a session that never came up, so a retry starts clean."""
+        self.alive = False
+        session = getattr(self, "session", None)
+        try:
+            if session:
+                self.conn.send_and_get_reply(
+                    new_method_call(DBusAddress(session, BUS, "org.freedesktop.portal.Session"), "Close"), timeout=3)
+        except Exception:
+            pass
+        try:
+            self.conn.close()
+        except Exception:
+            pass
 
     def _request(self, addr, member, sig, make_args, timeout=60):
         """Call a portal method and wait for its Request::Response signal."""
