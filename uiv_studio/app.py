@@ -20,6 +20,26 @@ def _setup_logging():
     logging.getLogger("RapidOCR").setLevel(logging.WARNING)
 
 
+def _make_app(QApplication):
+    """QApplication, surviving a Wayland session with no XWayland at all.
+
+    Qt loads its GTK3 platform theme when XDG_CURRENT_DESKTOP names GNOME, and
+    that plugin calls gtk_init(), which terminates the process outright when no
+    X display exists -- before any of our code runs. The theme could not work
+    there anyway, so hide the hint while Qt picks one and put it back straight
+    after, leaving the environment our subprocesses inherit untouched.
+    """
+    desktop = os.environ.get("XDG_CURRENT_DESKTOP")
+    hide = sys.platform.startswith("linux") and not os.environ.get("DISPLAY") and desktop
+    if hide:
+        os.environ["XDG_CURRENT_DESKTOP"] = "Wayland"
+    try:
+        return QApplication(sys.argv)
+    finally:
+        if hide:
+            os.environ["XDG_CURRENT_DESKTOP"] = desktop
+
+
 def run() -> int:
     # Linux: pynput and mss need X11; force the xcb platform so Qt coordinates match them
     if sys.platform.startswith("linux") and os.environ.get("DISPLAY"):
@@ -38,7 +58,7 @@ def run() -> int:
 
     _setup_logging()
     QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-    app = QApplication(sys.argv)
+    app = _make_app(QApplication)
     from uiv_studio import APP_NAME
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(APP_NAME)
