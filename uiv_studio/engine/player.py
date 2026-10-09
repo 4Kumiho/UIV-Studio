@@ -96,7 +96,8 @@ class Player(QObject):
             actuator = backend.make_actuator(self.settings["execution"], m)
             matcher = Matcher(grabber.grab, geo, self.settings["validation"],
                               should_abort=lambda: self._paused.is_set() or self._stop.is_set(),
-                              on_stage=lambda s, n: self.stage_changed.emit(s, n))
+                              on_stage=lambda s, n: self.stage_changed.emit(s, n),
+                              hover=self._hover_fn(actuator))
 
             self._kb = backend.make_hotkey_listener(self._menu_combo, lambda: self.hotkey.emit("menu"))
             self._kb.start()
@@ -205,6 +206,13 @@ class Player(QObject):
             x2, y2 = self._point(drop, step.drop)
             act.drag(x, y, x2, y2, mods)
         return Status.PASSED, match, drop, ""
+
+    def _hover_fn(self, act):
+        """Matcher callback: move the cursor (monitor-local coords) to recreate hover states."""
+        move = getattr(act, "move", None)
+        if move is None:
+            return None
+        return lambda x, y: move(self.monitor.left + x, self.monitor.top + y)
 
     def _point(self, m: MatchInfo, t: Target) -> tuple[int, int]:
         """Global physical coordinates of the click point inside the found element."""

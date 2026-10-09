@@ -9,10 +9,19 @@ Per stage (a fresh screenshot each time):
   2. GLOBAL - multi-scale template matching on the whole screen (top-K peaks, NMS)
               plus, when the element has text, OCR text boxes whose text matches.
   3. Every candidate gets a composite score:
-        template (color NCC) + OCR similarity (if text) + visual embedding
+        template (best of color NCC and structure NCC) + OCR similarity (if text)
+        + visual embedding
      weighted by the user's settings. Near-ties are resolved by distance to the
      expected position, so identical buttons elsewhere don't steal the match.
 Stages repeat (waiting `seconds_between_stages`) to let the UI settle.
+
+Hover states: an element recorded under the cursor (a highlighted menu entry)
+has a different background than the same element without the cursor. The
+structure score (text/icon strokes against the local median, blind to fill
+color and text polarity) keeps it findable; when it beats the color score the
+visual embedding is also compared on stroke images. Between stages the cursor
+is moved onto the best candidate (`hover`), so the next screenshot shows the
+same state as the recording (needed when the hover adds strokes, e.g. an outline).
 """
 
 import logging
@@ -88,7 +97,49 @@ def _is_flat(img: np.ndarray) -> bool:
     return float(img.std()) < 3.0
 
 
-def template_score(crop: np.ndarray, tpl: np.ndarray) -> float:
+def stroke_kernel(tpl: np.ndarray) -> int:
+    """Odd median window: larger than a text line, scaled with the element."""
+    k = min(tpl.shape[:2]) // 3
+    return int(min(31, max(7, k | 1)))
+
+
+def structure(img: np.ndarray, k: int) -> np.ndarray:
+    """Foreground details (text, icon strokes) of either polarity, without fills.
+
+    The local median is the background (text is the minority of any window) and,
+    unlike a blur, it keeps a fill's border sharp, so |pixel - median| is ~0 on a
+    hover highlight and on its edges. A label then looks the same on a plain menu
+    and on a highlight of any color, even when the text color flips.
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+    background = cv2.medianBlur(gray, k)
+    return cv2.absdiff(gray, background).astype(np.float32)
+
+
+# A structure match ignores color, so it is trusted slightly less than a color one
+STRUCTURE_WEIGHT = 0.97
+
+
+def structure_score(crop: np.ndarray, tpl: np.ndarray) -> float:
+    """Same-size structure similarity in 0..1 (tolerant to hover/selection fills)."""
+    if crop.shape[:2] != tpl.shape[:2]:
+        crop = cv2.resize(crop, (tpl.shape[1], tpl.shape[0]), interpolation=cv2.INTER_AREA)
+    k = stroke_kernel(tpl)
+    a, b = structure(crop, k), structure(tpl, k)
+    if float(a.std()) < 1.0 or float(b.std()) < 1.0:
+        return 0.0
+    v = float(cv2.matchTemplate(a, b, cv2.TM_CCOEFF_NORMED)[0, 0])
+    return max(0.0, v) * STRUCTURE_WEIGHT if np.isfinite(v) else 0.0
+
+
+def stroke_image(img: np.ndarray) -> np.ndarray:
+    """Structure map drawn as dark strokes on white (BGR), for the visual embedding."""
+    s = structure(img, stroke_kernel(img))
+    s = 255.0 - np.clip(s * (255.0 / max(1.0, float(s.max()))), 0, 255)
+    return cv2.cvtColor(s.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+
+
+def color_score(crop: np.ndarray, tpl: np.ndarray) -> float:
     """Same-size color similarity in 0..1."""
     if crop.shape[:2] != tpl.shape[:2]:
         crop = cv2.resize(crop, (tpl.shape[1], tpl.shape[0]), interpolation=cv2.INTER_AREA)
@@ -99,9 +150,21 @@ def template_score(crop: np.ndarray, tpl: np.ndarray) -> float:
     return max(0.0, v) if np.isfinite(v) else 0.0
 
 
+def template_score(crop: np.ndarray, tpl: np.ndarray) -> float:
+    """Same-size similarity in 0..1: color, or structure when that is better."""
+    return max(color_score(crop, tpl), structure_score(crop, tpl))
+
+
+# Structure beating color by this much means the element changed state (hover,
+# selection, focus): the visual signal is then also compared on stroke images
+STATE_CHANGE_GAP = 0.08
+
+
 class Matcher:
-    def __init__(self, grab, geometry: Geometry, cfg: dict, should_abort=lambda: False, on_stage=None):
+    def __init__(self, grab, geometry: Geometry, cfg: dict, should_abort=lambda: False, on_stage=None,
+                 hover=None):
         self.grab = grab                    # callable -> BGR screenshot
+        self.hover = hover                  # callable(x, y), monitor-local: move the cursor there
         self.geo = geometry
         self.cfg = cfg                      # settings["validation"]
         self.should_abort = should_abort
@@ -144,12 +207,27 @@ class Matcher:
                 best_seen, best_shot = best, shot
             if best and best.score >= self.cfg["threshold"]:
                 return self._result(True, best, shot, stage)
-            if stage < stages and self._sleep(self.cfg["seconds_between_stages"]):
-                break
+            if stage < stages:
+                self._hover_over(best, target, ex, ey)
+                if self._sleep(self.cfg["seconds_between_stages"]):
+                    break
 
         if best_seen is None:
             return MatchInfo(found=False, stage=stages)
         return self._result(False, best_seen, best_shot, stages)
+
+    def _hover_over(self, best, target: Target, ex: float, ey: float):
+        """Recreate the recorded hover state: put the cursor where the element should be."""
+        if self.hover is None:
+            return
+        if best is not None:
+            x, y = best.x + best.w // 2, best.y + best.h // 2
+        else:
+            x, y = ex + target.w * self.geo.rx / 2, ey + target.h * self.geo.ry / 2
+        try:
+            self.hover(int(x), int(y))
+        except Exception:
+            log.exception("Hover move failed")
 
     # ------------------------------------------------------------------ search
     def _local(self, ctx: "_Ctx") -> Candidate | None:
@@ -163,7 +241,7 @@ class Matcher:
             if x1 - x0 < tw or y1 - y0 < th:
                 continue
             region = ctx.shot[y0:y1, x0:x1]
-            for score, px, py in self._peaks(region, tpl, 3, 0.3):
+            for score, px, py in self._peaks(region, tpl, 3, 0.3) + self._structure_peaks(region, tpl, 2, 0.3):
                 found.append(Candidate(x0 + px, y0 + py, tw, th, "local", template=score))
         return self._pick([self._score(ctx, c) for c in found]) if found else None
 
@@ -173,10 +251,10 @@ class Matcher:
             th, tw = tpl.shape[:2]
             if tw >= ctx.shot.shape[1] or th >= ctx.shot.shape[0]:
                 continue
-            for score, px, py in self._peaks(ctx.shot, tpl, 6, 0.35):
+            for score, px, py in self._peaks(ctx.shot, tpl, 6, 0.35) + self._structure_peaks(ctx.shot, tpl, 4, 0.35):
                 found.append(Candidate(px, py, tw, th, "global", template=score))
         found.sort(key=lambda c: c.template, reverse=True)
-        return [self._score(ctx, c) for c in found[:8]]
+        return [self._score(ctx, c) for c in found[:10]]
 
     def _text_candidates(self, ctx: "_Ctx") -> list[Candidate]:
         t = ctx.target
@@ -202,6 +280,17 @@ class Matcher:
         res = np.nan_to_num(res, nan=0.0, posinf=0.0, neginf=0.0)
         return _top_peaks(res, k, tw, th, min_score)
 
+    @staticmethod
+    def _structure_peaks(img, tpl, k, min_score):
+        """Peaks on gradient maps: still finds the element when its fill color changed."""
+        if _is_flat(tpl):
+            return []
+        th, tw = tpl.shape[:2]
+        k = stroke_kernel(tpl)
+        res = cv2.matchTemplate(structure(img, k), structure(tpl, k), cv2.TM_CCOEFF_NORMED)
+        res = np.nan_to_num(res, nan=0.0, posinf=0.0, neginf=0.0) * STRUCTURE_WEIGHT
+        return _top_peaks(res, k, tw, th, min_score)
+
     # ------------------------------------------------------------------ scoring
     def _score(self, ctx: "_Ctx", c: Candidate) -> Candidate:
         H, W = ctx.shot.shape[:2]
@@ -212,8 +301,18 @@ class Matcher:
             return c
         crop = ctx.shot[y0:y1, x0:x1]
         tpl = ctx.base_template
-        c.template = template_score(crop, tpl)
+        color, struct = color_score(crop, tpl), structure_score(crop, tpl)
+        c.template = max(color, struct)
         c.visual, _ = Embedder.similarity(ctx.ref_vec, crop)
+        if struct > color + STATE_CHANGE_GAP:
+            # Same content in another state: compare the embeddings of its strokes
+            if ctx.ref_stroke_vec is None:
+                ctx.ref_stroke_vec = Embedder.embed(stroke_image(tpl))
+            if crop.shape[:2] != tpl.shape[:2]:
+                crop_s = cv2.resize(crop, (tpl.shape[1], tpl.shape[0]), interpolation=cv2.INTER_AREA)
+            else:
+                crop_s = crop
+            c.visual = max(c.visual, Embedder.similarity(ctx.ref_stroke_vec, stroke_image(crop_s))[0])
         w = ctx.weights
         if ctx.has_text:
             # OCR only on promising candidates: it is the most expensive signal
@@ -282,3 +381,4 @@ class _Ctx:
     weights: dict
     ex: float
     ey: float
+    ref_stroke_vec: np.ndarray | None = None
